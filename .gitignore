@@ -28,3 +28,14 @@ Homestead.json
 .env.production
 .phpactor.json
 auth.json
+
+.junie
+/build/
+/workbench/public/build/
+/workbench/public/hot
+
+/.badita.yaml
+/.idea
+/.junie
+GEMINI.md
+.badita.yaml

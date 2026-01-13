@@ -1,0 +1,39 @@
+
+laravel: '@testbench'
+
+providers:
+  - Livewire\LivewireServiceProvider
+  - Flux\FluxServiceProvider
+  - Spatie\LaravelData\LaravelDataServiceProvider
+  - SchenkeIo\LivewireAutoForm\LivewireAutoFormServiceProvider
+  - Workbench\App\Providers\WorkbenchServiceProvider
+
+migrations:
+  - workbench/database/migrations
+
+seeders:
+  - Database\Seeders\DatabaseSeeder
+
+env:
+  DB_CONNECTION: sqlite
+  DB_DATABASE: workbench/database/database.sqlite
+
+workbench:
+  welcome: false
+  start: '/'
+  install: true
+  health: false
+  discovers:
+    web: true
+    api: true
+    commands: true
+    components: true
+    factories: true
+    views: true
+
+  assets:
+    - laravel-assets
+  sync:
+    - from: storage
+      to: workbench/storage
+      reverse: true
