@@ -123,13 +123,18 @@ class WorkbenchServiceProvider extends ServiceProvider
         }
 
         $namespace = 'Workbench\\App\\Livewire';
-        foreach (glob($componentsPath.'/*.php') as $file) {
-            $class = pathinfo($file, PATHINFO_FILENAME);
-            $fqcn = $namespace.'\\'.$class;
+
+        $finder = new \Symfony\Component\Finder\Finder;
+        $finder->files()->in($componentsPath)->name('*.php');
+
+        foreach ($finder as $file) {
+            $relativePath = $file->getRelativePathname();
+            $classPath = str_replace([DIRECTORY_SEPARATOR, '.php'], ['\\', ''], $relativePath);
+            $fqcn = $namespace.'\\'.$classPath;
+
             if (! class_exists($fqcn)) {
-                // Attempt to include the file to load the class
                 try {
-                    require_once $file;
+                    require_once $file->getPathname();
                 } catch (\Throwable $e) {
                     continue;
                 }
@@ -140,9 +145,17 @@ class WorkbenchServiceProvider extends ServiceProvider
 
             // Only register classes that extend the Livewire Component base class
             if (is_subclass_of($fqcn, \Livewire\Component::class)) {
-                $alias = Str::kebab($class); // e.g., CityShowEditor -> city-show-editor
+                $alias = collect(explode('\\', $classPath))
+                    ->map(fn ($part) => Str::kebab($part))
+                    ->implode('.');
+                $fullAlias = collect(explode('\\', $fqcn))
+                    ->map(fn ($part) => Str::kebab($part))
+                    ->implode('.');
                 try {
                     $livewire::component($alias, $fqcn);
+                    if ($alias !== $fullAlias) {
+                        $livewire::component($fullAlias, $fqcn);
+                    }
                 } catch (\Throwable $e) {
                     // ignore duplicate registration, etc.
                 }

@@ -2,16 +2,23 @@
 
 This guide provides examples for using the package, ranging from basic forms to more advanced scenarios.
 
+> **Note on Method Calls:** Since the form logic is integrated directly into the component, you can call methods like `save()` or `edit()` directly in Blade. This ensures full compatibility with Alpine.js and component libraries like **Flux** without the need for wrapper methods. See [API Definitions](definitions.md#calling-methods-from-blade) for details.
+
 ### 1. The Basic Form (Manual Save)
 
-`<livewire:auto.form :model="$post" />`
-
-This is the simplest way to use the package. You extend the `LivewireAutoFormComponent` and define your rules.
+This is the simplest way to use the package. You extend `AutoForm` in your component and initialize it.
 
 **The Livewire Component:**
 ```php
-class EditPost extends LivewireAutoFormComponent
+use SchenkeIo\LivewireAutoForm\AutoForm;
+
+class EditPost extends AutoForm
 {
+    public function mount(Post $post)
+    {
+        $this->setModel($post);
+    }
+
     public function rules(): array
     {
         return [
@@ -44,15 +51,17 @@ class EditPost extends LivewireAutoFormComponent
 
 ### 2. Modern "Auto-Save" Experience
 
-`<livewire:auto.form :model="$post" />`
-
-If you want your form to save automatically as the user types (on blur), just set `$autoSave` to `true`.
+If you want your form to save automatically as the user types (on blur), just set `$this->autoSave` to `true`.
 
 **The Livewire Component:**
 ```php
-class EditPost extends LivewireAutoFormComponent
+class EditPost extends AutoForm
 {
-    public bool $autoSave = true;
+    public function mount(Post $post)
+    {
+        $this->setModel($post);
+        $this->autoSave = true;
+    }
 
     public function rules(): array
     {
@@ -74,7 +83,7 @@ class EditPost extends LivewireAutoFormComponent
     <textarea wire:model.blur="form.content"></textarea>
     @error('form.content') <span class="error">{{ $message }}</span> @enderror
     
-    <span wire:loading wire:target="form">Saving...</span>
+    <span wire:loading wire:target="save">Saving...</span>
 </div>
 ```
 
@@ -82,14 +91,17 @@ class EditPost extends LivewireAutoFormComponent
 
 ### 3. Handling Relationships
 
-`<livewire:auto.form :model="$brand" />`
-
 This is where the package really shines. Imagine a `Brand` that has many `Products`. You can edit the brand and its products in the same component.
 
 **The Livewire Component:**
 ```php
-class EditBrand extends LivewireAutoFormComponent
+class EditBrand extends AutoForm
 {
+    public function mount(Brand $brand)
+    {
+        $this->setModel($brand);
+    }
+
     public function rules(): array
     {
         return [
@@ -127,11 +139,11 @@ class EditBrand extends LivewireAutoFormComponent
     <button wire:click="add('products')">Add Product</button>
 
     <!-- This shows up only when we are editing or adding a product -->
-    @if($form->activeContext === 'products')
+    @if($activeContext === 'products')
         <div class="modal">
-            <h4>{{ $form->activeId ? 'Edit Product' : 'Add Product' }}</h4>
+            <h4>{{ $activeId ? 'Edit Product' : 'Add Product' }}</h4>
             
-            <!-- Relationship data is stored under the relationship name in the $form buffer -->
+            <!-- Relationship form is stored under the relationship name in the $form buffer -->
             <input type="text" wire:model.blur="form.products.name">
             <input type="number" wire:model.blur="form.products.price">
             
@@ -145,8 +157,6 @@ class EditBrand extends LivewireAutoFormComponent
 ---
 
 ### 4. Using Enums for Selects
-
-`<livewire:auto.form :model="$model" />`
 
 If your model uses PHP Enums (like a `Status` enum), the package can automatically generate options for your select dropdowns.
 
@@ -165,8 +175,8 @@ public function rules(): array
 ```html
 <select wire:model.blur="form.status">
     <option value="">Select Status</option>
-    @foreach($this->enumOptionsFor('status') as $option)
-        <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+    @foreach($this->optionsFor('status') as $option)
+        <option value="{{ $option[0] }}">{{ $option[1] }}</option>
     @endforeach
 </select>
 ```
@@ -176,8 +186,6 @@ The package looks at your model's `$casts` to find the Enum and creates readable
 ---
 
 ### 5. Listening for Events (Notifications)
-
-`<livewire:auto.form :model="$model" />`
 
 You can listen for the events dispatched by the component to show "Saved" notifications or other UI feedback.
 
@@ -199,14 +207,17 @@ You can listen for the events dispatched by the component to show "Saved" notifi
 
 ### 6. List & Edit Pattern
 
-`<livewire:auto.form />`
-
 You can use a single component to manage a collection of models, allowing you to select and edit any record from a list, or create a new one, all within the same view state.
 
 **The Livewire Component:**
 ```php
-class ManageProducts extends LivewireAutoFormComponent
+class ManageProducts extends AutoForm
 {
+    public function mount()
+    {
+        $this->setModel(new Product);
+    }
+
     public function rules(): array
     {
         return [
@@ -244,4 +255,48 @@ class ManageProducts extends LivewireAutoFormComponent
     <button wire:click="save">Save Product</button>
     <button wire:click="cancel">Reset Form</button>
 </div>
+```
+
+---
+
+### 7. Multi-Step Wizard
+
+For complex forms, extend `AutoWizardForm` to break them into steps. It handles step navigation, explicit field mapping, and per-step validation.
+
+**The Livewire Component:**
+```php
+class UserWizard extends AutoWizardForm
+{
+    public array $structure = [
+        'profile' => ['name'],
+        'address' => ['city'],
+    ];
+    
+    public string $stepViewPrefix = 'livewire.steps.';
+
+    public function rules(): array
+    {
+        return [
+            'name' => 'required',
+            'city' => 'required',
+        ];
+    }
+    
+    public function mount(User $user)
+    {
+        $this->setModel($user);
+        parent::mount();
+    }
+}
+```
+
+**The Main Blade View:**
+```html
+<form wire:submit.prevent="submit">
+    @foreach($this->getSteps() as $index => $step)
+        @include('livewire.steps.' . $step, ['isActive' => $this->isStepActive($index)])
+    @endforeach
+
+    <button type="submit">{{ $this->isLastStep() ? 'Finish' : 'Next' }}</button>
+</form>
 ```

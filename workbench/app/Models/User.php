@@ -12,6 +12,11 @@ class User extends Authenticatable
     /** @use HasFactory<\Workbench\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
+    protected static function newFactory(): \Workbench\Database\Factories\UserFactory
+    {
+        return \Workbench\Database\Factories\UserFactory::new();
+    }
+
     /**
      * The attributes that are mass assignable.
      *
@@ -21,6 +26,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'address',
+        'zip_code',
+        'city',
+        'phone',
+        'marketing_opt_in',
     ];
 
     /**

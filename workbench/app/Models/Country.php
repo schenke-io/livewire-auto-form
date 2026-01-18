@@ -7,11 +7,34 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use SchenkeIo\LivewireAutoForm\AutoFormOptions;
 
-class Country extends Model
+class Country extends Model implements AutoFormOptions
 {
     /** @use HasFactory<CountryFactory> */
     use HasFactory;
+
+    public static function getOptions(?string $labelMask = null): array
+    {
+        if ($labelMask && str_contains($labelMask, '(')) {
+            preg_match_all("/\((.*?)\)/", $labelMask, $matches);
+            if (empty($matches[1])) {
+                throw \SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException::optionsMaskSyntax($labelMask, self::class);
+            }
+            $columns = array_unique(array_merge(['id'], $matches[1]));
+
+            return self::query()->orderBy('name')->get($columns)->mapWithKeys(function ($m) use ($labelMask, $matches) {
+                $label = $labelMask;
+                foreach ($matches[1] as $col) {
+                    $label = str_replace("($col)", (string) $m->{$col}, $label);
+                }
+
+                return [$m->id => $label];
+            })->toArray();
+        }
+
+        return self::query()->orderBy('name')->pluck('name', 'id')->toArray();
+    }
 
     protected $fillable = [
         'name',
@@ -33,11 +56,5 @@ class Country extends Model
         return $this->belongsToMany(Country::class, 'country_borders', 'country_id', 'neighbor_id')
             ->withTimestamps()
             ->withPivot('border_length_km');
-    }
-
-    public function languages(): BelongsToMany
-    {
-        return $this->belongsToMany(Language::class, 'country_language')
-            ->withTimestamps();
     }
 }

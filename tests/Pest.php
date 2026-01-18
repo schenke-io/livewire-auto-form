@@ -15,7 +15,11 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
-    ->in('Feature');
+    ->in('Feature', 'Unit/Traits');
+
+pest()->extend(TestCase::class)
+    ->use(Orchestra\Testbench\Concerns\WithWorkbench::class)
+    ->in('Browser');
 
 /*
 |--------------------------------------------------------------------------

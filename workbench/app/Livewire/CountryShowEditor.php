@@ -2,16 +2,33 @@
 
 namespace Workbench\App\Livewire;
 
-use Illuminate\Database\Eloquent\Model;
-use SchenkeIo\LivewireAutoForm\LivewireAutoFormComponent;
+use Livewire\Component;
+use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
 use Workbench\App\Livewire\Traits\EditorHelper;
 use Workbench\App\Models\Country;
 
-class CountryShowEditor extends LivewireAutoFormComponent
+/**
+ * CountryShowEditor Component
+ *
+ * This component provides an interface for editing Country models and their
+ * related cities and borders. It demonstrates the use of LivewireAutoForm
+ * for handling complex relationships and manual save modes.
+ *
+ * Features:
+ * - Form generation for Country attributes.
+ * - Support for nested relationships (Cities and Borders).
+ * - Manual save mode (autoSave = false) to require explicit user action.
+ * - Integration with EditorHelper for workbench navigation.
+ */
+class CountryShowEditor extends Component
 {
     use EditorHelper;
+    use \SchenkeIo\LivewireAutoForm\Traits\HasAutoForm;
 
-    public Country $country;
+    public function boot(): void
+    {
+        $this->initializeHasAutoForm();
+    }
 
     public function rules(): array
     {
@@ -20,23 +37,22 @@ class CountryShowEditor extends LivewireAutoFormComponent
             'code' => 'nullable|string|max:10',
             'cities.name' => 'nullable|string|max:255',
             'cities.population' => 'nullable|integer',
+            'borders.id' => 'nullable|integer',
             'borders.name' => 'nullable|string|max:255',
-            'languages.name' => 'nullable|string|max:255',
-            'languages.code' => 'nullable|string|max:10',
+            'borders.pivot.border_length_km' => 'nullable|integer',
         ];
     }
 
-    public function mount(?Model $country = null): void
+    /**
+     * @throws LivewireAutoFormException
+     */
+    public function mount(\Illuminate\Database\Eloquent\Model $country): void
     {
-        if ($country instanceof Country) {
-            $this->country = $country;
-            parent::mount($country);
-        }
-        // Manual save mode for Country
         $this->autoSave = false;
+        $this->setModel($country);
     }
 
-    public function render()
+    public function render(): \Illuminate\Contracts\View\View|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\Support\Htmlable
     {
         return view('livewire.country-show-editor');
     }

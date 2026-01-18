@@ -19,12 +19,15 @@ class MakeReadmeCommand extends Command
 
         $assembler->storeVersionBadge();
         $assembler->storeDownloadBadge();
+        $assembler->storeLocalBadge('', '.github/phpstan.svg');
+        $assembler->storeLocalBadge('', '.github/coverage.svg');
         $assembler->addBadges();
 
         $assembler->addMarkdown('why.md');
         $assembler->addMarkdown('introduction.md');
         $assembler->addTableOfContents();
         $assembler->addMarkdown('example.md');
+        $assembler->addMarkdown('wizard.md');
         $assembler->addMarkdown('definitions.md');
 
         $assembler->writeMarkdown('README.md');

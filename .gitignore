@@ -39,3 +39,4 @@ auth.json
 /.junie
 GEMINI.md
 .badita.yaml
+tests/Browser/Screenshots

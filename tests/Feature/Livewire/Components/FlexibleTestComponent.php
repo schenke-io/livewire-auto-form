@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Livewire\Components;
 
-use SchenkeIo\LivewireAutoForm\LivewireAutoFormComponent;
+use SchenkeIo\LivewireAutoForm\AutoForm;
 
-class FlexibleTestComponent extends LivewireAutoFormComponent
+class FlexibleTestComponent extends AutoForm
 {
     public array $customRules = [];
 
@@ -18,7 +18,7 @@ class FlexibleTestComponent extends LivewireAutoFormComponent
         $this->customRules = $rules;
         $this->mockModel = $mockModel;
         if ($model && $model instanceof \Illuminate\Database\Eloquent\Model) {
-            parent::mount($model);
+            $this->setModel($model);
         }
     }
 
@@ -27,30 +27,49 @@ class FlexibleTestComponent extends LivewireAutoFormComponent
         return $this->customRules ?: ['name' => 'nullable'];
     }
 
-    public function resolveModelInstance(string $context, int|string|null $id): ?\Illuminate\Database\Eloquent\Model
+    public function ensureRelationAllowed(string $relation): void
     {
-        if ($this->mockModel && $context !== '' && $this->mockModel instanceof \Illuminate\Database\Eloquent\Model) {
-            return $this->mockModel;
-        }
-
-        return parent::resolveModelInstance($context, $id);
+        $reflection = new \ReflectionMethod(parent::class, 'ensureRelationAllowed');
+        $reflection->setAccessible(true);
+        $reflection->invoke($this, $relation);
     }
 
-    public function validate($rules = null, $messages = [], $attributes = [])
+    public function getRules(): array
     {
+        $rules = $this->rules();
+        $prefixedRules = [];
+        foreach ($rules as $key => $rule) {
+            $prefixedRules['form.'.$key] = $rule;
+        }
+
+        return $prefixedRules;
+    }
+
+    public bool $useRealValidation = false;
+
+    public function validate($rules = null, $messages = [], $attributes = []): array
+    {
+        if ($this->useRealValidation) {
+            return parent::validate($rules, $messages, $attributes);
+        }
+
         // For testing purposes, we often want to bypass real validation
         return ['form' => $this->form->all()];
     }
 
-    public function validateOnly($field, $rules = null, $messages = [], $attributes = [], $dataOverrides = [])
+    public function validateOnly($field, $rules = null, $messages = [], $attributes = [], $dataOverrides = []): array
     {
+        if ($this->useRealValidation) {
+            return parent::validateOnly($field, $rules, $messages, $attributes, $dataOverrides);
+        }
+
         // No-op for testing
         return [$field => data_get($this, $field)];
     }
 
     public function deleteRootModel()
     {
-        $this->resolveModelInstance('', $this->form->rootModelId)?->delete();
+        $this->getModel()?->delete();
     }
 
     public function render()

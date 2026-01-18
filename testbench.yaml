@@ -17,6 +17,9 @@ seeders:
 env:
   DB_CONNECTION: sqlite
   DB_DATABASE: workbench/database/database.sqlite
+  APP_ENV: local
+  APP_DEBUG: true
+  APP_KEY: base64:c/5MRA5M2xQcv/9cFH3ruutA6AUfeiydXlCFeJpAEQg=
 
 workbench:
   welcome: false

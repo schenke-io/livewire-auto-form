@@ -37,20 +37,17 @@
         </div>
         <nav class="py-4 flex-1" id="sidebar-nav">
             <flux:navlist>
+                <flux:navlist.item href="{{ url('/') }}" :current="request()->is('/')">
+                    Dashboard
+                </flux:navlist.item>
+                <flux:navlist.item href="{{ route('wizard') }}" :current="request()->routeIs('wizard')">
+                    User Wizard
+                </flux:navlist.item>
                 <flux:navlist.item href="{{ route('cities.index') }}" :current="request()->routeIs('cities.index')">
                     Cities
                 </flux:navlist.item>
                 <flux:navlist.item href="{{ route('countries.index') }}" :current="request()->routeIs('countries.index')">
                     Countries
-                </flux:navlist.item>
-                <flux:navlist.item href="{{ route('brands.index') }}" :current="request()->routeIs('brands.index')">
-                    Brands
-                </flux:navlist.item>
-                <flux:navlist.item href="{{ route('rivers.index') }}" :current="request()->routeIs('rivers.index')">
-                    Rivers
-                </flux:navlist.item>
-                <flux:navlist.item href="{{ route('languages.index') }}" :current="request()->routeIs('languages.index')">
-                    Languages
                 </flux:navlist.item>
             </flux:navlist>
         </nav>
@@ -69,11 +66,15 @@
     <div class="flex-1 min-w-0">
         <!-- Top bar (optional) -->
         <header class="h-16 flex items-center justify-between gap-3 px-6 border-b border-gray-200 bg-white">
-            <div class="font-semibold text-gray-900">{{ $title ?? 'Home' }}</div>
+            <flux:heading size="lg" class="text-gray-900">{{ $title ?? 'Home' }}</flux:heading>
         </header>
 
         <main class="p-6">
-            @yield('content')
+            @isset($slot)
+                {{ $slot }}
+            @else
+                @yield('content')
+            @endisset
         </main>
     </div>
 </div>

@@ -18,6 +18,7 @@ class CityFactory extends Factory
         return [
             'name' => $this->faker->city(),
             'population' => $this->faker->numberBetween(10_000, 5_000_000),
+            'background' => $this->faker->sentence(),
             'country_id' => Country::factory(),
         ];
     }

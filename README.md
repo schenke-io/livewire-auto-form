@@ -9,11 +9,15 @@ Do not edit manually as it will be overwritten.
 
 [![Latest Version](https://img.shields.io/packagist/v/schenke-io/livewire-auto-form?style=plastic)](https://packagist.org/packages/schenke-io/livewire-auto-form)
 [![Total Downloads](https://img.shields.io/packagist/dt/schenke-io/livewire-auto-form.svg?style=plastic)](https://packagist.org/packages/schenke-io/livewire-auto-form)
+[![](.github/phpstan.svg)]()
+[![](.github/coverage.svg)]()
 
 
 # Livewire Auto Form - Rapid Model Editing
 
 Stop manually mapping every Eloquent attribute to a Livewire property and start focusing on your app's core logic with our buffer-based form management.
+
+<img src="workbench/resources/md/livewire-auto-form.png" alt="Livewire Auto Form Concept" width="600">
 
 ### If you struggle with the following problems, we are just for you:
 
@@ -21,6 +25,7 @@ Stop manually mapping every Eloquent attribute to a Livewire property and start 
 *   **"Forgot-to-save" bugs:** Eliminate accidental data loss with centralized state management and predictable auto-save logic.
 *   **Relationship boilerplate:** Editing child models shouldn't be hard. Handle relationships with simple method calls and zero extra code.
 *   **Rigid workflows:** Switch between real-time "auto-save" and traditional "Save" buttons effortlessly, without rewriting your component.
+*   **Complex Wizard Workflows:** Building multi-step forms usually requires manual state management for steps. Our Wizard support automates navigation and validation.
 *   **Complex testing:** Logic consistency means fewer edge cases and easier unit testing for your form components.
 
 
@@ -31,10 +36,11 @@ Livewire Auto Form follows a **buffer-based state management** pattern. Instead 
 
 ### Core Principles
 
-*   **State Isolation:** All form data resides in a single `$form` buffer. This prevents accidental model mutations and allows for easy "undo" or "cancel" operations. Since `$form` is a `FormCollection` (extending Laravel's `Collection` and implementing `Wireable`), it provides rich state management beyond a simple array.
-*   **Convention over Configuration:** By extending the abstract class and calling `mount($model)`, the package manages field hydration and state transitions. Relationships and validation rules are defined in the component to maintain full control.
+*   **State Isolation:** All form data resides in a single `$form` buffer. This prevents accidental model mutations and allows for easy "undo" or "cancel" operations. Since `$form` is a `FormCollection` (implementing `ArrayAccess`, `Countable`, `IteratorAggregate`, and `Wireable`), it provides rich state management beyond a simple array.
+*   **Convention over Configuration:** By extending `AutoForm` and calling `setModel($model)`, the package manages field hydration and state transitions. Relationships and validation rules are defined in the component to maintain full control.
 *   **Context Switching:** Swap the active model within the same component seamlessly. You can move between the root model and its relations, or even switch between different instances of the same model type (the **"List & Edit"** pattern). The package manages the state transition and buffer hydration automatically.
 *   **Automatic Persistence:** Choose between real-time updates (`autoSave = true`) or manual submission. The package handles Eloquent `save()` calls and validation.
+*   **Multi-Step Workflows:** Use `AutoWizardForm` to split large forms into sequential steps with per-step validation and explicit field mapping.
 
 This approach ensures that your components remain clean, predictable, and easy to test.
 
@@ -58,27 +64,33 @@ composer require schenke-io/livewire-auto-form
     * [4. Using Enums for Selects](#4.-using-enums-for-selects)
     * [5. Listening for Events (Notifications)](#5.-listening-for-events-(notifications))
     * [6. List & Edit Pattern](#6.-list-&-edit-pattern)
+    * [7. Multi-Step Wizard](#7.-multi-step-wizard)
+* [Multi-Step Wizards](#multi-step-wizards)
+    * [Magic Features](#magic-features)
+    * [Configuration](#configuration)
+    * [API Reference](#api-reference)
+    * [Full Example](#full-example)
 * [API Definitions](#api-definitions)
-  * [Public Properties](#public-properties)
-    * [The `$form` Object (FormCollection)](#the-`$form`-object-(formcollection))
-  * [Mandatory Methods](#mandatory-methods)
-    * [`rules()`](#`rules()`)
-  * [Public Interface (View Actions)](#public-interface-(view-actions))
+  * [Using AutoForm](#using-autoform)
+  * [Using AutoWizardForm](#using-autowizardform)
+    * [Public Properties (AutoWizardForm)](#public-properties-(autowizardform))
+    * [Public Methods (AutoWizardForm)](#public-methods-(autowizardform))
+  * [Public Properties (AutoForm)](#public-properties-(autoform))
+    * [The $form object (FormCollection)](#the-$form-object-(formcollection))
+  * [View Actions (Public Interface)](#view-actions-(public-interface))
     * [`edit(string $relation, int|string $id)`](#`edit(string-$relation,-int|string-$id)`)
     * [`add(string $relation)`](#`add(string-$relation)`)
     * [`save()`](#`save()`)
     * [`cancel()`](#`cancel()`)
-    * [`isEdited(string $relation, int|string $id)`](#`isedited(string-$relation,-int|string-$id)`)
     * [`delete(string $relation, int|string $id)`](#`delete(string-$relation,-int|string-$id)`)
-    * [`reloadModel(Model $model)`](#`reloadmodel(model-$model)`)
+  * [Calling Methods from Blade](#calling-methods-from-blade)
   * [Helper Methods](#helper-methods)
+    * [`getRelationList(string $relation)`](#`getrelationlist(string-$relation)`)
+    * [`isEdited(string $relation, int|string $id)`](#`isedited(string-$relation,-int|string-$id)`)
     * [`getModel()`](#`getmodel()`)
     * [`getActiveModel()`](#`getactivemodel()`)
-    * [`allOptionsForRelation(string $relation, string $labelColumn = 'name')`](#`alloptionsforrelation(string-$relation,-string-$labelcolumn-=-'name')`)
-    * [`getRelationList(string $relation)`](#`getrelationlist(string-$relation)`)
-    * [`enumOptionsFor(string $attribute, ?string $relation = null)`](#`enumoptionsfor(string-$attribute,-?string-$relation-=-null)`)
+    * [`optionsFor(string $key, ?string $labelMask = null)`](#`optionsfor(string-$key,-?string-$labelmask-=-null)`)
   * [Events](#events)
-    * [Event Integration (Alpine.js Example)](#event-integration-(alpine.js-example))
   * [Exceptions](#exceptions)
 
 
@@ -87,16 +99,23 @@ composer require schenke-io/livewire-auto-form
 
 This guide provides examples for using the package, ranging from basic forms to more advanced scenarios.
 
+> **Note on Method Calls:** Since the form logic is integrated directly into the component, you can call methods like `save()` or `edit()` directly in Blade. This ensures full compatibility with Alpine.js and component libraries like **Flux** without the need for wrapper methods. See [API Definitions](definitions.md#calling-methods-from-blade) for details.
+
 ### 1. The Basic Form (Manual Save)
 
-`<livewire:auto.form :model="$post" />`
-
-This is the simplest way to use the package. You extend the `LivewireAutoFormComponent` and define your rules.
+This is the simplest way to use the package. You extend `AutoForm` in your component and initialize it.
 
 **The Livewire Component:**
 ```php
-class EditPost extends LivewireAutoFormComponent
+use SchenkeIo\LivewireAutoForm\AutoForm;
+
+class EditPost extends AutoForm
 {
+    public function mount(Post $post)
+    {
+        $this->setModel($post);
+    }
+
     public function rules(): array
     {
         return [
@@ -129,15 +148,17 @@ class EditPost extends LivewireAutoFormComponent
 
 ### 2. Modern "Auto-Save" Experience
 
-`<livewire:auto.form :model="$post" />`
-
-If you want your form to save automatically as the user types (on blur), just set `$autoSave` to `true`.
+If you want your form to save automatically as the user types (on blur), just set `$this->autoSave` to `true`.
 
 **The Livewire Component:**
 ```php
-class EditPost extends LivewireAutoFormComponent
+class EditPost extends AutoForm
 {
-    public bool $autoSave = true;
+    public function mount(Post $post)
+    {
+        $this->setModel($post);
+        $this->autoSave = true;
+    }
 
     public function rules(): array
     {
@@ -159,7 +180,7 @@ class EditPost extends LivewireAutoFormComponent
     <textarea wire:model.blur="form.content"></textarea>
     @error('form.content') <span class="error">{{ $message }}</span> @enderror
     
-    <span wire:loading wire:target="form">Saving...</span>
+    <span wire:loading wire:target="save">Saving...</span>
 </div>
 ```
 
@@ -167,14 +188,17 @@ class EditPost extends LivewireAutoFormComponent
 
 ### 3. Handling Relationships
 
-`<livewire:auto.form :model="$brand" />`
-
 This is where the package really shines. Imagine a `Brand` that has many `Products`. You can edit the brand and its products in the same component.
 
 **The Livewire Component:**
 ```php
-class EditBrand extends LivewireAutoFormComponent
+class EditBrand extends AutoForm
 {
+    public function mount(Brand $brand)
+    {
+        $this->setModel($brand);
+    }
+
     public function rules(): array
     {
         return [
@@ -212,11 +236,11 @@ class EditBrand extends LivewireAutoFormComponent
     <button wire:click="add('products')">Add Product</button>
 
     <!-- This shows up only when we are editing or adding a product -->
-    @if($form->activeContext === 'products')
+    @if($activeContext === 'products')
         <div class="modal">
-            <h4>{{ $form->activeId ? 'Edit Product' : 'Add Product' }}</h4>
+            <h4>{{ $activeId ? 'Edit Product' : 'Add Product' }}</h4>
             
-            <!-- Relationship data is stored under the relationship name in the $form buffer -->
+            <!-- Relationship form is stored under the relationship name in the $form buffer -->
             <input type="text" wire:model.blur="form.products.name">
             <input type="number" wire:model.blur="form.products.price">
             
@@ -230,8 +254,6 @@ class EditBrand extends LivewireAutoFormComponent
 ---
 
 ### 4. Using Enums for Selects
-
-`<livewire:auto.form :model="$model" />`
 
 If your model uses PHP Enums (like a `Status` enum), the package can automatically generate options for your select dropdowns.
 
@@ -250,8 +272,8 @@ public function rules(): array
 ```html
 <select wire:model.blur="form.status">
     <option value="">Select Status</option>
-    @foreach($this->enumOptionsFor('status') as $option)
-        <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+    @foreach($this->optionsFor('status') as $option)
+        <option value="{{ $option[0] }}">{{ $option[1] }}</option>
     @endforeach
 </select>
 ```
@@ -261,8 +283,6 @@ The package looks at your model's `$casts` to find the Enum and creates readable
 ---
 
 ### 5. Listening for Events (Notifications)
-
-`<livewire:auto.form :model="$model" />`
 
 You can listen for the events dispatched by the component to show "Saved" notifications or other UI feedback.
 
@@ -284,14 +304,17 @@ You can listen for the events dispatched by the component to show "Saved" notifi
 
 ### 6. List & Edit Pattern
 
-`<livewire:auto.form />`
-
 You can use a single component to manage a collection of models, allowing you to select and edit any record from a list, or create a new one, all within the same view state.
 
 **The Livewire Component:**
 ```php
-class ManageProducts extends LivewireAutoFormComponent
+class ManageProducts extends AutoForm
 {
+    public function mount()
+    {
+        $this->setModel(new Product);
+    }
+
     public function rules(): array
     {
         return [
@@ -331,195 +354,295 @@ class ManageProducts extends LivewireAutoFormComponent
 </div>
 ```
 
+---
+
+### 7. Multi-Step Wizard
+
+For complex forms, extend `AutoWizardForm` to break them into steps. It handles step navigation, explicit field mapping, and per-step validation.
+
+**The Livewire Component:**
+```php
+class UserWizard extends AutoWizardForm
+{
+    public array $structure = [
+        'profile' => ['name'],
+        'address' => ['city'],
+    ];
+    
+    public string $stepViewPrefix = 'livewire.steps.';
+
+    public function rules(): array
+    {
+        return [
+            'name' => 'required',
+            'city' => 'required',
+        ];
+    }
+    
+    public function mount(User $user)
+    {
+        $this->setModel($user);
+        parent::mount();
+    }
+}
+```
+
+**The Main Blade View:**
+```html
+<form wire:submit.prevent="submit">
+    @foreach($this->getSteps() as $index => $step)
+        @include('livewire.steps.' . $step, ['isActive' => $this->isStepActive($index)])
+    @endforeach
+
+    <button type="submit">{{ $this->isLastStep() ? 'Finish' : 'Next' }}</button>
+</form>
+```
+
+
+
+# Multi-Step Wizards
+
+The `AutoWizardForm` extends the core `AutoForm` functionality to support complex, multi-step workflows with ease. It handles step navigation, per-step validation, and a unified submission flow.
+
+### Magic Features
+
+- **Unified `submit()` Flow**: A single `submit()` method handles both navigating to the next step (with validation) and final persistence when the last step is reached.
+- **Progress Integrity**: Before final saving, the wizard performs an integrity check to ensure that all fields defined in your `rules()` were actually present in at least one of the steps. If any field is missing, a `LivewireAutoFormException` is thrown.
+
+### Configuration
+
+To create a wizard, extend `AutoWizardForm` and configure the following:
+
+- **`$structure`**: A map of Blade view names to field names (e.g., `['step-one' => ['field1', 'field2'], 'step-two' => ['field3']]`).
+- **`$stepViewPrefix`**: A prefix for the views defined in `$structure` (e.g., `livewire.user-wizard-steps.`).
+- **`rules()`**: Define your validation rules.
+- **`mount()`**: Initialize the model with `setModel($model)`.
+
+### API Reference
+
+| Method | Description |
+| --- | --- |
+| `submit()` | Handles both transitions and final saving. Calls `next()` or `save()`. |
+| `next()` | Validates current step's fields and moves forward. |
+| `previous()` | Moves to the previous step. |
+| `isLastStep()` | Returns `true` if on the final step. |
+| `getSteps()` | Returns the list of defined step views. |
+| `isStepActive(int $index)` | Checks if a step is currently active. |
+
+### Full Example
+
+**1. The Livewire Component:**
+
+```php
+namespace App\Livewire;
+
+use App\Models\User;
+use SchenkeIo\LivewireAutoForm\AutoWizardForm;
+
+class UserWizard extends AutoWizardForm
+{
+    public array $structure = [
+        'profile' => ['name', 'email'],
+        'address' => ['city'],
+        'preferences' => ['marketing_opt_in']
+    ];
+    
+    public string $stepViewPrefix = 'livewire.user-wizard-steps.';
+
+    public function mount(User $user)
+    {
+        $this->setModel($user);
+        parent::mount();
+    }
+
+    public function rules(): array
+    {
+        return [
+            'name' => 'required|min:3',
+            'email' => 'required|email',
+            'city' => 'required',
+            'marketing_opt_in' => 'boolean',
+        ];
+    }
+}
+```
+
+**2. The Main Blade View (`user-wizard.blade.php`):**
+
+```html
+<form wire:submit.prevent="submit">
+    @foreach($this->getSteps() as $index => $step)
+        @include('livewire.user-wizard-steps.' . $step, [
+            'isActive' => $this->isStepActive($index)
+        ])
+    @endforeach
+
+    <div class="actions">
+        @if($currentStepIndex > 0)
+            <button type="button" wire:click="previous">Previous</button>
+        @endif
+
+        <button type="submit">
+            {{ $this->isLastStep() ? 'Finish' : 'Next' }}
+        </button>
+    </div>
+</form>
+```
+
+**3. Individual Step View (`profile.blade.php`):**
+
+```html
+<div class="{{ $isActive ? 'block' : 'hidden' }}">
+    <input type="text" wire:model="form.name">
+    <input type="email" wire:model="form.email">
+</div>
+```
+
 
 
 # API Definitions
 
-The `LivewireAutoFormComponent` abstract class provides several public properties and methods to manage form state and persistence using a **"Single Buffer"** architecture.
+The package provides two main classes for managing form state and persistence: `AutoForm` and `AutoWizardForm`. These classes are **Base Components**, offering a context-aware **"Single Buffer"** architecture.
 
-## Public Properties
+## Using AutoForm
+
+To use the package, extend `AutoForm` in your Livewire component and initialize it in the `mount()` method:
+
+```php
+use SchenkeIo\LivewireAutoForm\AutoForm;
+
+class MyComponent extends AutoForm
+{
+    public function mount(User $user)
+    {
+        $this->setModel($user);
+    }
+
+    public function rules(): array
+    {
+        return [
+            'name' => 'required',
+            'email' => 'required|email',
+            'posts.title' => 'required' // Relation support
+        ];
+    }
+}
+```
+
+## Using AutoWizardForm
+
+For multi-step workflows, extend `AutoWizardForm`. It provides step management and per-step validation.
+
+See the [Multi-Step Wizards](wizard.md) guide for details.
+
+### Public Properties (AutoWizardForm)
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `$form` | `FormCollection` | The **"$form buffer"** (Single Buffer architecture) for form input and state. All view inputs should bind here: `wire:model="form.field_name"`. |
+| `$currentStepIndex` | `int` | The zero-based index of the current active step. |
+| `$structure` | `array` | Map of Blade view names to field names. |
+| `$stepViewPrefix` | `string` | Prefix for the step Blade views. |
+
+### Public Methods (AutoWizardForm)
+
+| Method | Description |
+| --- | --- |
+| `submit()` | Handles navigation (next step) or final submission (if on last step). |
+| `next()` | Validates current step and moves forward. |
+| `previous()` | Moves to the previous step. |
+| `isLastStep()` | Returns `true` if on the final step. |
+| `getSteps()` | Returns the list of defined step views. |
+| `isStepActive(int $index)` | Checks if a step is currently active. |
+
+## Public Properties (AutoForm)
+
+| Property | Type | Description |
+| --- | --- | --- |
 | `$autoSave` | `bool` | Default `false`. If `true`, fields are saved on every update (on blur). If `false`, you must call `save()` manually. |
+| `$form` | `FormCollection` | The internal state container (read-only from outside). |
 
-### The `$form` Object (FormCollection)
+### The $form object (FormCollection)
 
-The `$form` object contains the following state properties (read-only from outside the component):
+The `$form` object contains the following state properties:
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `activeContext` | `string` | Current editing context: `''` (empty string) for the root model or a relation name. |
-| `activeId` | `int\|string\|null` | ID of the record being edited in the active context. `null` indicates "Add Mode". |
+| `activeContext` | `string` | Current editing context: `''` for root model or a relation name. |
+| `activeId` | `int|string|null` | ID of the record being edited. `null` indicates "Add Mode". |
 | `rootModelClass` | `string` | The class name of the main model. |
-| `rootModelId` | `int\|string\|null` | The ID of the main model instance. |
-| `nullables` | `array` | List of fields that should be converted to `null` when empty strings are submitted (derived from `rules()`). |
-| `autoSave` | `bool` | Whether auto-save is currently enabled for this form. |
+| `rootModelId` | `int|string|null` | The ID of the main model instance. |
+| `autoSave` | `bool` | Whether auto-save is currently enabled. |
 
-> [!WARNING]
-> These properties are read-only. Use the provided methods (like `edit()`, `add()`, `cancel()`) to change the state. Direct modification is not allowed.
-
-## Mandatory Methods
-
-### `rules()`
-You **must** implement this method in your component. It should return an array of validation rules for your form fields.
-
-**Important:** The keys of the `rules()` array are used to determine which fields are loaded into the `$form` buffer (implementing the **Data Loading Strategy**) and which relations are permitted for editing.
-
-*   Use plain keys for root model fields: `'name' => 'required'`.
-*   Use dotted keys for relation fields: `'posts.title' => 'required'`.
-*   **Shadowing**: Relation fields take precedence over root fields with the same name if dots are present in the rule key.
-
-## Public Interface (View Actions)
+## View Actions (Public Interface)
 
 ### `edit(string $relation, int|string $id)`
 Switches the context to edit a record.
-- To edit a **related record**, provide the relation name and its ID.
-- To switch the **root model** (e.g. from a list), use an empty string (`''`) for `$relation` and the model's ID.
-
-Raises an exception if `$relation` is not in `rules()` (unless it's an empty string).
-
-```php
-<!-- Edit a related post -->
-<button wire:click="edit('posts', {{ $post->id }})">Edit Post</button>
-
-<!-- Switch the root model -->
-<button wire:click="edit('', {{ $otherModel->id }})">Select This Record</button>
-```
+- **Related record**: `wire:click="edit('posts', {{ $post->id }})"`
+- **Root model**: `wire:click="edit('', {{ $otherId }})"`
 
 ### `add(string $relation)`
 Switches the context to "Add Mode".
-- To add a **related record**, provide the relation name.
-- To prepare for a **new root model** (clear the form), use an empty string (`''`) for `$relation`.
-
-Raises an exception if `$relation` is not in `rules()` (unless it's an empty string).
-
-```php
-<!-- Add a new related post -->
-<button wire:click="add('posts')">Add Post</button>
-
-<!-- Prepare for a new root model -->
-<button wire:click="add('')">New Record</button>
-```
+- **Related record**: `wire:click="add('posts')"`
+- **New root model**: `wire:click="add('')"`
 
 ### `save()`
-Manually persists the current `$form` data (Update or Create). If editing a relation, it returns to the root context after saving. If creating a new root model, it updates the `rootModelId` after the first save.
-
-```php
-<button wire:click="save">Save Changes</button>
-```
+Validates and persists the current buffer data.
+- If editing a relation, it returns to root context after saving.
+- If creating a root model, it updates `rootModelId` after the first save.
 
 ### `cancel()`
-Resets context to `''` and reloads the root model data into the `$form` buffer to discard changes.
-
-```php
-<button wire:click="cancel">Cancel</button>
-```
-
-### `isEdited(string $relation, int|string $id)`
-Returns `true` if the specified record (root or relation) is currently being edited. This is useful for highlighting the active item in a list.
-
-```php
-@foreach($this->getRelationList('posts') as $post)
-    <li class="{{ $this->isEdited('posts', $post->id) ? 'bg-blue-100' : '' }}">
-        {{ $post->title }}
-        <button wire:click="edit('posts', {{ $post->id }})">Edit</button>
-    </li>
-@endforeach
-```
+Resets context to root (`''`) and reloads data to discard changes.
 
 ### `delete(string $relation, int|string $id)`
-Deletes a record.
-- To delete a **related record**, provide the relation name and its ID.
-- To delete the **root model**, use an empty string (`''`) for `$relation` and the model's ID.
+Deletes or detaches a record and updates the active context.
 
-If the deleted record was the active context, the component automatically resets to root context (for relations) or "Add Mode" (for root model).
+## Calling Methods from Blade
 
-Raises an exception if `$relation` is not in `rules()` (unless it's an empty string).
+Since the form logic is now part of the Component itself, you can call methods directly in Blade without any special wrappers:
 
-```php
-<!-- Delete a related post -->
-<button wire:click="delete('posts', {{ $post->id }})">Delete</button>
-
-<!-- Delete a root model -->
-<button wire:click="delete('', {{ $model->id }})">Delete This</button>
+```html
+<button wire:click="save">Save</button>
 ```
 
-### `reloadModel(Model $model)`
-Synchronizes the form state with the latest data from the database for the given model.
+This is fully compatible with Alpine.js and component libraries like **Flux**.
 
 ## Helper Methods
 
+### `getRelationList(string $relation)`
+Returns a collection of related models for the given relation name.
+- **Example**: `@foreach($this->getRelationList('posts') as $post)`
+
+### `isEdited(string $relation, int|string $id)`
+Returns `true` if the specified related record is currently being edited.
+- **Example**: `<li class="{{ $this->isEdited('posts', $post->id) ? 'active' : '' }}">`
+
 ### `getModel()`
-Returns the root model instance with current form data applied.
+Returns the root model instance with current buffer data applied.
 
 ### `getActiveModel()`
-Returns the model instance for the current active context (root or relation) with current form data applied.
+Returns the model instance for the current active context (root or relation) with current buffer data applied.
 
-### `allOptionsForRelation(string $relation, string $labelColumn = 'name')`
-Returns an array of all available records for a relationship (for selects). Supports `BelongsTo` and `BelongsToMany` relations. Labels are automatically localized.
-
-```php
-<select wire:model="form.category_id">
-    @foreach($this->allOptionsForRelation('category') as $option)
-        <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
-    @endforeach
-</select>
-```
-
-### `getRelationList(string $relation)`
-Returns a `Collection` of related models with columns filtered by `rules()`.
-
-```php
-@foreach($this->getRelationList('posts') as $post)
-    <li>{{ $post->title }}</li>
-@endforeach
-```
-
-### `enumOptionsFor(string $attribute, ?string $relation = null)`
-Returns an array of options for an enum-casted attribute. Labels are automatically localized.
-
-```php
-<select wire:model="form.status">
-    @foreach($this->enumOptionsFor('status') as $option)
-        <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
-    @endforeach
-</select>
-```
+### `optionsFor(string $key, ?string $labelMask = null)`
+Universal helper for Enums or Relations.
+- Labels are automatically localized.
+- **For Enums**: Use `(name)` or `(value)` masks.
+- **For Models**: Use column name (e.g., `'title'`) or mask with placeholders (e.g., `'(code) - (name)'`).
 
 ## Events
 
-The component dispatches several events that can be used for UI feedback or integration with other scripts.
-
 | Event | Parameters | When Dispatched |
 | --- | --- | --- |
-| `saved` | `context`, `id` | After a successful manual `save()` or a `delete()` operation. |
-| `field-updated` | `changed`, `context`, `id` | After a successful auto-save of an individual field (when `$autoSave` is `true`). |
-| `confirm-discard-changes` | - | When switching context if there are unsaved changes and `$autoSave` is `false`. |
-
-### Event Integration (Alpine.js Example)
-
-You can listen for these events using Alpine.js for real-time notifications:
-
-```html
-<div x-data="{ show: false, message: '' }"
-     x-on:saved.window="show = true; message = 'Changes saved!'; setTimeout(() => show = false, 2000)"
-     x-on:field-updated.window="show = true; message = 'Field updated!'; setTimeout(() => show = false, 2000)">
-
-    <div x-show="show" class="notification">
-        <span x-text="message"></span>
-    </div>
-</div>
-```
+| `saved` | `context`, `id` | After successful `save()` or `delete()`. |
+| `field-updated` | `changed`, `context`, `id` | After auto-save (when `autoSave` is `true`). |
+| `confirm-discard-changes` | - | When switching context with unsaved changes. |
 
 ## Exceptions
 
-The package throws `SchenkeIo\LivewireAutoForm\LivewireAutoFormException` for various error conditions:
-- **Configuration Integrity**: Errors in setup (e.g. missing root model).
-- **Rules Discrepancy**: Mismatches between model data and `rules()`.
-- **Relation Errors**: Missing or unsupported relationship types.
-- **Enum Errors**: Missing enum casts for attributes.
+The package throws `SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException` for:
+- **Configuration Integrity**: Errors in setup.
+- **Rules Discrepancy**: Mismatches between data and `rules()`.
+- **Relation Errors**: Unsupported relationship types.
+- **Enum Errors**: Missing enum casts.
 
 
 

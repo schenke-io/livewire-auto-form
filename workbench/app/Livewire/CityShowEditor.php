@@ -2,16 +2,34 @@
 
 namespace Workbench\App\Livewire;
 
-use Illuminate\Database\Eloquent\Model;
-use SchenkeIo\LivewireAutoForm\LivewireAutoFormComponent;
+use Livewire\Component;
 use Workbench\App\Livewire\Traits\EditorHelper;
 use Workbench\App\Models\City;
 
-class CityShowEditor extends LivewireAutoFormComponent
+/**
+ * CityShowEditor Component
+ *
+ * This component provides a live-editing interface for the City model.
+ * It utilizes the LivewireAutoForm package to automatically handle form
+ * generation, validation, and persistence.
+ *
+ * Features:
+ * - Automatic form rendering based on model schema and rules.
+ * - Auto-save functionality enabled by default.
+ * - Validation rules defined for city attributes and related country.
+ * - Integration with EditorHelper for common workbench UI actions.
+ */
+class CityShowEditor extends Component
 {
     use EditorHelper;
+    use \SchenkeIo\LivewireAutoForm\Traits\HasAutoForm;
 
     public City $city;
+
+    public function boot(): void
+    {
+        $this->initializeHasAutoForm();
+    }
 
     public function rules(): array
     {
@@ -21,23 +39,24 @@ class CityShowEditor extends LivewireAutoFormComponent
             'population' => 'nullable|integer|min:0',
             'is_capital' => 'boolean',
             'group' => 'nullable|string',
-            'brands.name' => 'nullable|string|max:255',
-            'brands.group' => 'nullable|string',
-            'rivers.name' => 'nullable|string|max:255',
-            'rivers.length_km' => 'nullable|integer',
+            'country_id' => 'required|exists:countries,id',
             'country.name' => 'nullable|string|max:255',
             'country.code' => 'nullable|string|max:2',
         ];
     }
 
-    public function mount(?Model $city = null): void
+    public function mount(City $city): void
     {
-        if ($city instanceof City) {
-            $this->city = $city;
-            parent::mount($city);
-        }
-        // Manual save mode for City
-        $this->autoSave = false;
+        $this->city = $city;
+        $this->autoSave = true;
+        $this->setModel($city);
+    }
+
+    public function save(): void
+    {
+        $this->validate();
+        $this->getCrudProcessor()->save($this->form->all());
+        session()->flash('status', 'Saved successfully');
     }
 
     public function render()

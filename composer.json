@@ -56,7 +56,7 @@
         "low": "composer update --prefer-lowest --prefer-dist",
         "stable": "composer update --prefer-stable --prefer-dist",
         "analyse": "./vendor/bin/phpstan analyse",
-        "coverage": "vendor/bin/pest --coverage",
+        "coverage": "vendor/bin/pest --coverage --parallel",
         "markdown": "@php vendor/bin/testbench workbench:make-readme --ansi",
         "pint": "vendor/bin/pint",
         "test": "vendor/bin/pest",

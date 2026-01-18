@@ -2,19 +2,15 @@
 
 @section('content')
     <div class="prose max-w-none">
-        <h1 class="text-2xl font-semibold mb-4">Countries</h1>
+        <flux:heading size="xl" class="mb-4">Countries</flux:heading>
         @if ($countries->count())
             <flux:navlist>
                 @foreach ($countries as $country)
                     @php($tc = $topCities[$country->id] ?? collect())
-                    @php($tr = $topRivers[$country->id] ?? collect())
                     @php($parts = [])
                     @php($parts[] = 'Code: ' . $country->code)
                     @if ($tc->count())
                         @php($parts[] = 'Top cities: ' . $tc->pluck('name')->implode(', '))
-                    @endif
-                    @if ($tr->count())
-                        @php($parts[] = 'Top rivers: ' . $tr->pluck('name')->implode(', '))
                     @endif
                     <flux:navlist.item href="{{ route('countries.show', $country) }}">
                         <span class="font-semibold">{{ $country->name }}</span>

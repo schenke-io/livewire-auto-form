@@ -1,14 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Workbench\App\Http\Controllers\BrandController;
 use Workbench\App\Http\Controllers\CityController;
 use Workbench\App\Http\Controllers\CountryController;
 use Workbench\App\Http\Controllers\HomeController;
-use Workbench\App\Http\Controllers\LanguageController;
-use Workbench\App\Http\Controllers\RiverController;
+use Workbench\App\Livewire\Forms\UserWizardForm;
 
 Route::get('/', HomeController::class);
+Route::get('/wizard', UserWizardForm::class)->name('wizard');
 
 Route::post('/terminate', function () {
     // Check if the POSIX extension is enabled
@@ -25,6 +24,3 @@ Route::post('/terminate', function () {
 
 Route::resource('cities', CityController::class)->only(['index', 'show']);
 Route::resource('countries', CountryController::class)->only(['index', 'show']);
-Route::resource('brands', BrandController::class)->only(['index', 'show']);
-Route::resource('rivers', RiverController::class)->only(['index', 'show']);
-Route::resource('languages', LanguageController::class)->only(['index', 'show']);
