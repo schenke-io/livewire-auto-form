@@ -29,7 +29,7 @@
         "spatie/laravel-data": "^4.0",
         "nette/neon": "^3.4",
         "livewire/flux": "^2.1",
-        "livewire/livewire": "^3.6|^4.0"
+        "livewire/livewire": "^4.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^12.3",
@@ -58,7 +58,7 @@
         "stable": "composer update --prefer-stable --prefer-dist",
         "analyse": "./vendor/bin/phpstan analyse",
         "coverage": "vendor/bin/pest --coverage --parallel",
-        "markdown": "@php vendor/bin/testbench workbench:make-readme --ansi",
+        "markdown": "@php vendor/bin/testbench workbench:write-markdown --ansi",
         "pint": "vendor/bin/pint",
         "test": "vendor/bin/pest",
         "parallel": "vendor/bin/pest --parallel",

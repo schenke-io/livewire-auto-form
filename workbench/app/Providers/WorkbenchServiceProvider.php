@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
-use Workbench\App\Console\Commands\MakeReadmeCommand;
+use Workbench\App\Console\Commands\WriteMarkdownCommand;
 
 class WorkbenchServiceProvider extends ServiceProvider
 {
@@ -17,7 +17,7 @@ class WorkbenchServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->commands([
-            MakeReadmeCommand::class,
+            WriteMarkdownCommand::class,
         ]);
     }
 

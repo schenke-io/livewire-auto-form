@@ -5,9 +5,9 @@ namespace Workbench\App\Console\Commands;
 use Illuminate\Console\Command;
 use SchenkeIo\PackagingTools\Markdown\MarkdownAssembler;
 
-class MakeReadmeCommand extends Command
+class WriteMarkdownCommand extends Command
 {
-    protected $signature = 'workbench:make-readme';
+    protected $signature = 'workbench:write-markdown';
 
     protected $description = 'Generate the README.md file';
 
