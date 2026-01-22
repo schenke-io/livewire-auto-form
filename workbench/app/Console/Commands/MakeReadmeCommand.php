@@ -17,11 +17,10 @@ class MakeReadmeCommand extends Command
 
         $assembler = new MarkdownAssembler('workbench/resources/md');
 
-        $assembler->storeVersionBadge();
-        $assembler->storeDownloadBadge();
-        $assembler->storeLocalBadge('', '.github/phpstan.svg');
-        $assembler->storeLocalBadge('', '.github/coverage.svg');
-        $assembler->addBadges();
+        $assembler->badges()
+            ->test('run-tests.yml')
+            ->version()
+            ->download();
 
         $assembler->addMarkdown('why.md');
         $assembler->addMarkdown('introduction.md');

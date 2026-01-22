@@ -1,10 +1,7 @@
-# Livewire Auto Form - Rapid Model Editing
 
 Stop manually mapping every Eloquent attribute to a Livewire property and start focusing on your app's core logic with our buffer-based form management.
 
-<img src="workbench/resources/md/livewire-auto-form.png" alt="Livewire Auto Form Concept" width="600">
-
-### If you struggle with the following problems, we are just for you:
+**If you struggle with the following problems, we are just for you:**
 
 *   **Tedious property definitions:** Tired of manually adding `public string $name` for every model attribute? Our single-buffer architecture handles it all.
 *   **"Forgot-to-save" bugs:** Eliminate accidental data loss with centralized state management and predictable auto-save logic.

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e72f0a774b5d04231c9f8cbe40481e8a",
+    "content-hash": "dca0a7cafde9a2b930ef7748de02a6ec",
     "packages": [
         {
             "name": "archtechx/enums",
@@ -9145,6 +9145,84 @@
             "time": "2023-02-03T21:26:53+00:00"
         },
         {
+            "name": "kitloong/laravel-migrations-generator",
+            "version": "v7.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/kitloong/laravel-migrations-generator.git",
+                "reference": "37f29a99671a5dde3a598e40157e2e245f077878"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/kitloong/laravel-migrations-generator/zipball/37f29a99671a5dde3a598e40157e2e245f077878",
+                "reference": "37f29a99671a5dde3a598e40157e2e245f077878",
+                "shasum": ""
+            },
+            "require": {
+                "ext-pdo": "*",
+                "illuminate/support": "^11.0|^12.0",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "barryvdh/laravel-ide-helper": "^3.0",
+                "friendsofphp/php-cs-fixer": "^3.1",
+                "larastan/larastan": "^2.0|^3.0",
+                "mockery/mockery": "^1.0",
+                "orchestra/testbench": "^9.0|^10.0",
+                "phpmd/phpmd": "^2.10",
+                "phpstan/phpstan-mockery": "^1.0|^2.0",
+                "slevomat/coding-standard": "^8.0",
+                "squizlabs/php_codesniffer": "^3.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "KitLoong\\MigrationsGenerator\\MigrationsGeneratorServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "KitLoong\\MigrationsGenerator\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Kit Loong",
+                    "email": "kitloong1008@gmail.com"
+                }
+            ],
+            "description": "Generates Laravel Migrations from an existing database",
+            "keywords": [
+                "artisan",
+                "generator",
+                "laravel",
+                "lumen",
+                "migration",
+                "migrations"
+            ],
+            "support": {
+                "issues": "https://github.com/kitloong/laravel-migrations-generator/issues",
+                "source": "https://github.com/kitloong/laravel-migrations-generator/tree/v7.2.0"
+            },
+            "funding": [
+                {
+                    "url": "https://www.buymeacoffee.com/kitloong",
+                    "type": "buy_me_a_coffee"
+                },
+                {
+                    "url": "https://github.com/kitloong",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-08-10T07:31:19+00:00"
+        },
+        {
             "name": "larastan/larastan",
             "version": "v3.9.0",
             "source": {
@@ -11677,34 +11755,32 @@
         },
         {
             "name": "schenke-io/laravel-relation-manager",
-            "version": "v1.5.6",
+            "version": "v2.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/schenke-io/laravel-relation-manager.git",
-                "reference": "15cba6e8dc5626eb3b48dbdf4e1c121c057c6787"
+                "reference": "6ec7ce52b1ba3689d079d4ad3cc1c600401b93cc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/schenke-io/laravel-relation-manager/zipball/15cba6e8dc5626eb3b48dbdf4e1c121c057c6787",
-                "reference": "15cba6e8dc5626eb3b48dbdf4e1c121c057c6787",
+                "url": "https://api.github.com/repos/schenke-io/laravel-relation-manager/zipball/6ec7ce52b1ba3689d079d4ad3cc1c600401b93cc",
+                "reference": "6ec7ce52b1ba3689d079d4ad3cc1c600401b93cc",
                 "shasum": ""
             },
             "require": {
-                "archtechx/enums": "^1.1",
-                "illuminate/contracts": "^10.0|^11.0|^12.0",
-                "nette/php-generator": "^4.1.6",
-                "php": "^8.2",
-                "spatie/laravel-data": "^3.12|^4.13",
-                "spatie/laravel-package-tools": "^1.0"
+                "illuminate/contracts": "^12.0",
+                "php": "^8.3",
+                "spatie/laravel-data": "^4.18",
+                "spatie/laravel-package-tools": "^1.90"
             },
             "require-dev": {
-                "larastan/larastan": "^2.0|^3.0",
+                "larastan/larastan": "^3.0",
                 "laravel/pint": "^1.21",
                 "mockery/mockery": "^1.4.4",
                 "nunomaduro/collision": "^8.5",
-                "orchestra/testbench": "^9.5|^10.0",
+                "orchestra/testbench": "^10.5",
                 "pestphp/pest": "^3.7",
-                "schenke-io/packaging-tools": "^v0.0",
+                "schenke-io/packaging-tools": "^v0.1",
                 "spatie/laravel-ray": "^1.26"
             },
             "type": "library",
@@ -11716,6 +11792,9 @@
                 }
             },
             "autoload": {
+                "files": [
+                    "src/Pest/Expectations.php"
+                ],
                 "psr-4": {
                     "SchenkeIo\\LaravelRelationManager\\": "src/"
                 }
@@ -11738,40 +11817,46 @@
             ],
             "support": {
                 "issues": "https://github.com/schenke-io/laravel-relation-manager/issues",
-                "source": "https://github.com/schenke-io/laravel-relation-manager/tree/v1.5.6"
+                "source": "https://github.com/schenke-io/laravel-relation-manager/tree/v2.0.1"
             },
-            "time": "2025-09-22T09:21:49+00:00"
+            "time": "2026-01-18T21:29:04+00:00"
         },
         {
             "name": "schenke-io/packaging-tools",
-            "version": "v0.0.29",
+            "version": "v0.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/schenke-io/packaging-tools.git",
-                "reference": "230827095985011e5eec203a2c952536204f448a"
+                "reference": "67c982c4095ec514d433e5310f9abf31672e435a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/schenke-io/packaging-tools/zipball/230827095985011e5eec203a2c952536204f448a",
-                "reference": "230827095985011e5eec203a2c952536204f448a",
+                "url": "https://api.github.com/repos/schenke-io/packaging-tools/zipball/67c982c4095ec514d433e5310f9abf31672e435a",
+                "reference": "67c982c4095ec514d433e5310f9abf31672e435a",
                 "shasum": ""
             },
             "require": {
                 "badges/poser": "^3.1",
                 "ext-curl": "*",
+                "ext-gd": "*",
                 "ext-json": "*",
                 "ext-simplexml": "*",
-                "illuminate/filesystem": "^11.0|^12.0",
+                "illuminate/filesystem": "^12.0",
+                "illuminate/http": "^12.0",
+                "kitloong/laravel-migrations-generator": "^7.0",
                 "nette/neon": "^3.4",
                 "nette/php-generator": "^4.2",
                 "nette/schema": "^1.3",
-                "php": "^8.2|^8.3"
+                "php": "^8.3",
+                "symfony/console": "^7.1"
             },
             "require-dev": {
-                "laravel/pint": "^1.18",
+                "larastan/larastan": "^3.5",
+                "laravel/pint": "^1.24",
                 "mockery/mockery": "^1.5",
-                "pestphp/pest": "^3.6",
-                "phpstan/phpstan-phpunit": "^1.4",
+                "pestphp/pest": "^4.2",
+                "pestphp/pest-plugin-mutate": "^4.0",
+                "phpunit/phpunit": "^12.3",
                 "spatie/ray": "^1.40"
             },
             "type": "library",
@@ -11796,9 +11881,9 @@
             ],
             "support": {
                 "issues": "https://github.com/schenke-io/packaging-tools/issues",
-                "source": "https://github.com/schenke-io/packaging-tools/tree/v0.0.29"
+                "source": "https://github.com/schenke-io/packaging-tools/tree/v0.1.1"
             },
-            "time": "2025-12-16T10:18:00+00:00"
+            "time": "2026-01-18T21:53:12+00:00"
         },
         {
             "name": "sebastian/cli-parser",
