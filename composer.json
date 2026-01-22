@@ -29,7 +29,7 @@
         "spatie/laravel-data": "^4.0",
         "nette/neon": "^3.4",
         "livewire/flux": "^2.1",
-        "livewire/livewire": "^3.6"
+        "livewire/livewire": "^3.6|^4.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^12.3",
@@ -38,7 +38,7 @@
         "laravel/pint": "^1.24",
         "orchestra/testbench": "^10.2",
         "schenke-io/laravel-relation-manager": "^2.0",
-        "schenke-io/packaging-tools": "^0.1",
+        "schenke-io/packaging-tools": "^0.1.5",
         "spatie/laravel-ray": "^1.40",
         "barryvdh/laravel-ide-helper": "^3.5",
         "phpstan/phpstan-phpunit": "^2.0",
