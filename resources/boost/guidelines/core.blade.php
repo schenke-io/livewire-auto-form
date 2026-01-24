@@ -66,8 +66,8 @@ In Blade:
 <!-- Select for relationship -->
 <select wire:model.blur="form.category_id">
     <option value="">Select Category</option>
-    @@foreach($form->optionsFor('category') as $option)
-        <option value="@{{ $option[0] }}">@{{ $option[1] }}</option>
+    @@foreach($form->optionsFor('category') as [$value, $label])
+        <option value="@{{ $value }}">@{{ $label }}</option>
     @@endforeach
 </select>
 ```
@@ -78,8 +78,8 @@ Use `optionsFor()` to get labels for Enum-casted attributes or Models.
 ```html
 <!-- Enum options -->
 <select wire:model.blur="form.status">
-    @@foreach($form->optionsFor('status') as $option)
-        <option value="@{{ $option[0] }}">@{{ $option[1] }}</option>
+    @@foreach($form->optionsFor('status') as [$value, $label])
+        <option value="@{{ $value }}">@{{ $label }}</option>
     @@endforeach
 </select>
 

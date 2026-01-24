@@ -158,16 +158,22 @@ class EditBrand extends AutoForm
 
 ### 4. Using Enums for Selects
 
-If your model uses PHP Enums (like a `Status` enum), the package can automatically generate options for your select dropdowns.
+The primary way to handle selection elements (selects, radios, etc.) is by implementing the `AutoFormOptions` interface on your Model or Enum.
 
-**The Livewire Component:**
+**The Enum:**
 ```php
-// Define rules that include the attribute
-public function rules(): array
+enum Status: string implements AutoFormOptions
 {
-    return [
-        'status' => 'required',
-    ];
+    case DRAFT = 'draft';
+    case PUBLISHED = 'published';
+
+    public static function getOptions(?string $labelMask = null): array
+    {
+        return [
+            self::DRAFT->value => 'The Draft',
+            self::PUBLISHED->value => 'Live on Site',
+        ];
+    }
 }
 ```
 
@@ -175,13 +181,14 @@ public function rules(): array
 ```html
 <select wire:model.blur="form.status">
     <option value="">Select Status</option>
-    @foreach($this->optionsFor('status') as $option)
-        <option value="{{ $option[0] }}">{{ $option[1] }}</option>
+    @foreach($this->optionsFor('status') as [$value, $label])
+        <option value="{{ $value }}">{{ $label }}</option>
     @endforeach
 </select>
 ```
 
-The package looks at your model's `$casts` to find the Enum and creates readable labels automatically!
+**Automatic Fallback:**
+If you don't implement `AutoFormOptions`, the package will automatically generate readable labels from your Enum case names or Model attributes!
 
 ---
 

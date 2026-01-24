@@ -16,11 +16,7 @@ class WriteMarkdownCommand extends Command
         $this->info('Generating README.md...');
 
         $assembler = new MarkdownAssembler('workbench/resources/md');
-
-        $assembler->badges()
-            ->test('run-tests.yml')
-            ->version()
-            ->download();
+        $assembler->autoHeader('Livewire Auto Form');
 
         $assembler->addMarkdown('why.md');
         $assembler->addMarkdown('introduction.md');

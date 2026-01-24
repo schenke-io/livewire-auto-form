@@ -121,10 +121,94 @@ Returns the root model instance with current buffer data applied.
 Returns the model instance for the current active context (root or relation) with current buffer data applied.
 
 ### `optionsFor(string $key, ?string $labelMask = null)`
-Universal helper for Enums or Relations.
-- Labels are automatically localized.
-- **For Enums**: Use `(name)` or `(value)` masks.
-- **For Models**: Use column name (e.g., `'title'`) or mask with placeholders (e.g., `'(code) - (name)'`).
+Universal helper for fetching [value => label] pairs for selection elements (selects, radios, checkboxes).
+
+**Usage in Blade:**
+```html
+<select wire:model.blur="form.status">
+    @foreach($this->optionsFor('status') as [$value, $label])
+        <option value="{{ $value }}">{{ $label }}</option>
+    @endforeach
+</select>
+```
+
+**Primary Usage (`AutoFormOptions` Interface)**
+
+The recommended way to provide options is by implementing the `AutoFormOptions` interface on your Model or BackedEnum. This centralizes the logic and supports custom label formatting via the `$labelMask`.
+
+```php
+class Country extends Model implements AutoFormOptions 
+{
+    public static function getOptions(?string $labelMask = null): array 
+    {
+        return self::pluck('name', 'id')->toArray();
+    }
+}
+```
+
+**Automatic Fallback**
+
+If the target class does not implement `AutoFormOptions`, the system uses an automatic generation strategy:
+
+- **Models (Relations)**:
+    - If `$labelMask` is null, it uses the `name` column.
+    - If `$labelMask` is a string (e.g., `'title'`), it uses that column as the label.
+    - If `$labelMask` contains placeholders in parentheses, it replaces them with the corresponding column values, e.g., `(first_name) (last_name)`.
+- **Enums**: 
+    - If `$labelMask` is null, it generates a headline from the case name (e.g., `ACTIVE_STATUS` -> `Active Status`).
+    - If `$labelMask` is provided, it must contain `(name)` or `(value)` keywords in parentheses.
+
+Labels generated via the fallback are automatically localized using Laravel's `__()`.
+
+## Localization
+
+The package supports both JSON and PHP-based localization storage. All labels generated for select options, whether via `AutoFormOptions` or the automatic fallback, are passed through Laravel's `__()` helper.
+
+### JSON-based Localization
+Useful for full-sentence labels.
+```json
+{
+    "Active": "User is Active",
+    "Pending": "User is Pending"
+}
+```
+
+### PHP-based Localization
+Useful for structured keys.
+```php
+// lang/en/enums.php
+return [
+    'status' => [
+        'active' => 'Active User',
+        'pending' => 'Review Pending'
+    ]
+];
+```
+
+### Advanced Configuration (Replacements)
+You can provide translation replacements by returning an array from `getOptions()`:
+```php
+public static function getOptions(?string $labelMask = null): array {
+    return [
+        'active' => [
+            'key' => 'enums.status.active_count', 
+            'replace' => ['count' => User::where('active', true)->count()]
+        ]
+    ];
+}
+```
+
+### The `AutoFormLocalisedEnumOptions` Trait
+For Enums, you can use the `AutoFormLocalisedEnumOptions` trait to automate key generation:
+```php
+enum UserStatus: string implements AutoFormOptions {
+    use AutoFormLocalisedEnumOptions;
+    const OPTION_TRANSLATION_PREFIX = 'enums.user_status';
+
+    case ACTIVE = 'active';
+}
+```
+This automatically resolves to the translation key `enums.user_status.active`. You can also override the prefix dynamically by passing it as the `$labelMask` to `optionsFor('status', 'custom.prefix')`.
 
 ## Events
 

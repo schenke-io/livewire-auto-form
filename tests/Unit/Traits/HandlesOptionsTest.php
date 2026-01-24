@@ -279,6 +279,57 @@ it('throws exception for invalid label mask syntax in enums', function () {
         ->toThrow(LivewireAutoFormException::class, '[Tests\Feature\Livewire\Components\FlexibleTestComponent]');
 });
 
+it('works with PHP list destructuring syntax for options', function () {
+    $model = new ModelWithOptions;
+    $model->save();
+
+    $component = Livewire::test(FlexibleTestComponent::class, [
+        'model' => new ModelWithRelationWithOptions,
+        'rules' => ['optionsRelation.name' => 'required'],
+    ]);
+
+    $options = $component->instance()->optionsFor('optionsRelation');
+
+    // Simulate Blade's @foreach($options as [$value, $label])
+    $results = [];
+    foreach ($options as [$value, $label]) {
+        $results[$value] = $label;
+    }
+
+    expect($results)->toBe([
+        1 => 'Option 1',
+        2 => 'Option 2',
+    ]);
+});
+
+it('uses AutoFormModelOptions trait for default model options', function () {
+    Schema::create('trait_models', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+    });
+
+    $traitModelClass = new class extends \Illuminate\Database\Eloquent\Model implements AutoFormOptions
+    {
+        use \SchenkeIo\LivewireAutoForm\Traits\AutoFormModelOptions;
+
+        protected $table = 'trait_models';
+
+        public $timestamps = false;
+
+        protected $fillable = ['name'];
+    };
+
+    $traitModelClass::create(['name' => 'Model A']);
+    $traitModelClass::create(['name' => 'Model B']);
+
+    $options = $traitModelClass::getOptions();
+
+    expect($options)->toBe([
+        1 => 'Model A',
+        2 => 'Model B',
+    ]);
+});
+
 it('throws exception if root model class is missing in modelOptionsFor', function () {
     $component = Livewire::test(FlexibleTestComponent::class, [
         'rules' => ['country.name' => 'required'],

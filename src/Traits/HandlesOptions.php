@@ -37,6 +37,8 @@ trait HandlesOptions
      * @param  string  $key  The field name or relation name.
      * @param  string|null  $labelMask  Optional mask for labels (e.g., '(first_name) (last_name)').
      * @return array<int, array{0: string|int, 1: string}> Array of [value, label] pairs.
+     *
+     * @throws LivewireAutoFormException
      */
     public function optionsFor(string $key, ?string $labelMask = null): array
     {
@@ -165,20 +167,21 @@ trait HandlesOptions
                 return [];
             }
 
-            if ($labelMask && ! str_contains($labelMask, '(name)') && ! str_contains($labelMask, '(value)')) {
-                throw LivewireAutoFormException::optionsMaskSyntax($labelMask, static::class);
-            }
-
             if (is_subclass_of($enumClass, AutoFormOptions::class)) {
                 return $this->mapOptions($enumClass::getOptions($labelMask));
             }
 
+            if ($labelMask && ! str_contains($labelMask, '(name)') && ! str_contains($labelMask, '(value)')) {
+                throw LivewireAutoFormException::optionsMaskSyntax($labelMask, static::class);
+            }
+
             return collect($enumClass::cases())->map(function ($case) use ($labelMask) {
                 $value = $case instanceof \BackedEnum ? $case->value : $case->name;
+                $label = $labelMask ? str_replace(['(name)', '(value)'], [(string) $case->name, (string) $value], $labelMask) : Str::headline($case->name);
 
                 return [
                     $value,
-                    $labelMask ? str_replace(['(name)', '(value)'], [(string) $case->name, (string) $value], $labelMask) : Str::headline($case->name),
+                    __((string) $label),
                 ];
             })->toArray();
         } catch (LivewireAutoFormException $e) {
@@ -191,13 +194,24 @@ trait HandlesOptions
     /**
      * Maps an associative array of options to the format expected by the frontend.
      *
-     * @param  array<string|int, string>  $options
+     * @param  array<string|int, string|array<string|int, mixed>>  $options
      * @return array<int, array{0: string|int, 1: string}>
      */
     private function mapOptions(array $options): array
     {
         return collect($options)
-            ->map(fn ($label, $value) => [$value, __((string) $label)])
+            ->map(function ($label, $value) {
+                if (is_array($label)) {
+                    /** @var array<string|int, mixed> $label */
+                    $key = $label['key'] ?? $label[0] ?? '';
+                    /** @var array<string, mixed> $replace */
+                    $replace = (array) ($label['replace'] ?? $label[1] ?? []);
+
+                    return [$value, __((string) $key, $replace)];
+                }
+
+                return [$value, __((string) $label)];
+            })
             ->values()->toArray();
     }
 }

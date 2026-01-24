@@ -50,8 +50,12 @@ interface AutoFormOptions
      * This method is called by the `HandlesOptions` trait to populate select
      * inputs. It can use the optional `$labelMask` to format labels dynamically.
      *
+     * Labels are automatically passed through Laravel's `__()` helper.
+     * To support translation replacements, return an array as the value:
+     * `['key' => 'translation.key', 'replace' => ['count' => 5]]`
+     *
      * @param  string|null  $labelMask  Optional mask to format the labels (e.g. "%name (%code)")
-     * @return array<string|int, string> Associative array of [stored_value => human_label].
+     * @return array<string|int, string|array<string, mixed>> Associative array of [stored_value => human_label|translation_array].
      */
     public static function getOptions(?string $labelMask = null): array;
 }

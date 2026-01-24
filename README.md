@@ -1,8 +1,8 @@
+[![Version](https://img.shields.io/packagist/v/schenke-io/livewire-auto-form?style=flat)](https://packagist.org/packages/schenke-io/livewire-auto-form)
+[![Downloads](https://img.shields.io/packagist/dt/schenke-io/livewire-auto-form?style=flat)](https://packagist.org/packages/schenke-io/livewire-auto-form)
+[![Tests](https://github.com/schenke-io/livewire-auto-form/actions/workflows/run-tests.yml/badge.svg)](https://github.com/schenke-io/livewire-auto-form/actions/workflows/run-tests.yml)
 [![License](https://img.shields.io/github/license/schenke-io/livewire-auto-form?style=flat)](https://github.com/schenke-io/livewire-auto-form/blob/main/LICENSE.md)
 [![PHP](https://img.shields.io/packagist/php-v/schenke-io/livewire-auto-form?style=flat)](https://packagist.org/packages/schenke-io/livewire-auto-form)
-[![Tests](https://github.com/schenke-io/livewire-auto-form/actions/workflows/run-tests.yml/badge.svg?branch=main)](https://github.com/schenke-io/livewire-auto-form/actions/workflows/run-tests.yml)
-[![Latest Version](https://img.shields.io/packagist/v/schenke-io/livewire-auto-form?style=flat)](https://packagist.org/packages/schenke-io/livewire-auto-form)
-[![Total Downloads](https://img.shields.io/packagist/dt/schenke-io/livewire-auto-form?style=flat)](https://packagist.org/packages/schenke-io/livewire-auto-form)
 
 <!--
 ********************************************************************************
@@ -16,7 +16,11 @@
 *                                                                              *
 ********************************************************************************
 -->
-![cover](workbench/resources/md/cover.png)
+# Livewire Auto Form
+
+> Enhanced livewire component to edit models and its relationships
+
+<img src="workbench/resources/md/cover.png" alt="cover" />
 
 Stop manually mapping every Eloquent attribute to a Livewire property and start focusing on your app's core logic with our buffer-based form management.
 
@@ -25,6 +29,7 @@ Stop manually mapping every Eloquent attribute to a Livewire property and start 
 *   **Tedious property definitions:** Tired of manually adding `public string $name` for every model attribute? Our single-buffer architecture handles it all.
 *   **"Forgot-to-save" bugs:** Eliminate accidental data loss with centralized state management and predictable auto-save logic.
 *   **Relationship boilerplate:** Editing child models shouldn't be hard. Handle relationships with simple method calls and zero extra code.
+*   **Manual option lists:** Stop hardcoding select options. Use `AutoFormOptions` to centralize labels in your Models and Enums, or rely on our smart automatic generation.
 *   **Rigid workflows:** Switch between real-time "auto-save" and traditional "Save" buttons effortlessly, without rewriting your component.
 *   **Complex Wizard Workflows:** Building multi-step forms usually requires manual state management for steps. Our Wizard support automates navigation and validation.
 *   **Complex testing:** Logic consistency means fewer edge cases and easier unit testing for your form components.
@@ -39,6 +44,7 @@ Livewire Auto Form follows a **buffer-based state management** pattern. Instead 
 *   **Convention over Configuration:** By extending `AutoForm` and calling `setModel($model)`, the package manages field hydration and state transitions. Relationships and validation rules are defined in the component to maintain full control.
 *   **Context Switching:** Swap the active model within the same component seamlessly. You can move between the root model and its relations, or even switch between different instances of the same model type (the **"List & Edit"** pattern). The package manages the state transition and buffer hydration automatically.
 *   **Automatic Persistence:** Choose between real-time updates (`autoSave = true`) or manual submission. The package handles Eloquent `save()` calls and validation.
+*   **Standardized Options:** Use the `AutoFormOptions` interface to centralize option generation for selects and radios, with an automatic fallback for quick setups.
 *   **Multi-Step Workflows:** Use `AutoWizardForm` to split large forms into sequential steps with per-step validation and explicit field mapping.
 
 This approach ensures that your components remain clean, predictable, and easy to test.
@@ -49,6 +55,7 @@ This approach ensures that your components remain clean, predictable, and easy t
 composer require schenke-io/livewire-auto-form
 ```
 
+* [Livewire Auto Form](#livewire-auto-form)
 * [Concept of Coding](#concept-of-coding)
     * [Core Principles](#core-principles)
     * [Installation](#installation)
@@ -85,6 +92,11 @@ composer require schenke-io/livewire-auto-form
     * [`getModel()`](#getmodel)
     * [`getActiveModel()`](#getactivemodel)
     * [`optionsFor(string $key, ?string $labelMask = null)`](#optionsfor-string-key-string-labelmask-null)
+  * [Localization](#localization)
+    * [JSON-based Localization](#json-based-localization)
+    * [PHP-based Localization](#php-based-localization)
+    * [Advanced Configuration (Replacements)](#advanced-configuration-replacements)
+    * [The `AutoFormLocalisedEnumOptions` Trait](#the-autoformlocalisedenumoptions-trait)
   * [Events](#events)
   * [Exceptions](#exceptions)
 
@@ -248,16 +260,22 @@ class EditBrand extends AutoForm
 
 ### 4. Using Enums for Selects
 
-If your model uses PHP Enums (like a `Status` enum), the package can automatically generate options for your select dropdowns.
+The primary way to handle selection elements (selects, radios, etc.) is by implementing the `AutoFormOptions` interface on your Model or Enum.
 
-**The Livewire Component:**
+**The Enum:**
 ```php
-// Define rules that include the attribute
-public function rules(): array
+enum Status: string implements AutoFormOptions
 {
-    return [
-        'status' => 'required',
-    ];
+    case DRAFT = 'draft';
+    case PUBLISHED = 'published';
+
+    public static function getOptions(?string $labelMask = null): array
+    {
+        return [
+            self::DRAFT->value => 'The Draft',
+            self::PUBLISHED->value => 'Live on Site',
+        ];
+    }
 }
 ```
 
@@ -265,13 +283,14 @@ public function rules(): array
 ```html
 <select wire:model.blur="form.status">
     <option value="">Select Status</option>
-    @foreach($this->optionsFor('status') as $option)
-        <option value="{{ $option[0] }}">{{ $option[1] }}</option>
+    @foreach($this->optionsFor('status') as [$value, $label])
+        <option value="{{ $value }}">{{ $label }}</option>
     @endforeach
 </select>
 ```
 
-The package looks at your model's `$casts` to find the Enum and creates readable labels automatically!
+**Automatic Fallback:**
+If you don't implement `AutoFormOptions`, the package will automatically generate readable labels from your Enum case names or Model attributes!
 
 ---
 
@@ -612,10 +631,94 @@ Returns the root model instance with current buffer data applied.
 Returns the model instance for the current active context (root or relation) with current buffer data applied.
 
 ### `optionsFor(string $key, ?string $labelMask = null)`
-Universal helper for Enums or Relations.
-- Labels are automatically localized.
-- **For Enums**: Use `(name)` or `(value)` masks.
-- **For Models**: Use column name (e.g., `'title'`) or mask with placeholders (e.g., `'(code) - (name)'`).
+Universal helper for fetching [value => label] pairs for selection elements (selects, radios, checkboxes).
+
+**Usage in Blade:**
+```html
+<select wire:model.blur="form.status">
+    @foreach($this->optionsFor('status') as [$value, $label])
+        <option value="{{ $value }}">{{ $label }}</option>
+    @endforeach
+</select>
+```
+
+**Primary Usage (`AutoFormOptions` Interface)**
+
+The recommended way to provide options is by implementing the `AutoFormOptions` interface on your Model or BackedEnum. This centralizes the logic and supports custom label formatting via the `$labelMask`.
+
+```php
+class Country extends Model implements AutoFormOptions 
+{
+    public static function getOptions(?string $labelMask = null): array 
+    {
+        return self::pluck('name', 'id')->toArray();
+    }
+}
+```
+
+**Automatic Fallback**
+
+If the target class does not implement `AutoFormOptions`, the system uses an automatic generation strategy:
+
+- **Models (Relations)**:
+    - If `$labelMask` is null, it uses the `name` column.
+    - If `$labelMask` is a string (e.g., `'title'`), it uses that column as the label.
+    - If `$labelMask` contains placeholders in parentheses, it replaces them with the corresponding column values, e.g., `(first_name) (last_name)`.
+- **Enums**: 
+    - If `$labelMask` is null, it generates a headline from the case name (e.g., `ACTIVE_STATUS` -> `Active Status`).
+    - If `$labelMask` is provided, it must contain `(name)` or `(value)` keywords in parentheses.
+
+Labels generated via the fallback are automatically localized using Laravel's `__()`.
+
+## Localization
+
+The package supports both JSON and PHP-based localization storage. All labels generated for select options, whether via `AutoFormOptions` or the automatic fallback, are passed through Laravel's `__()` helper.
+
+### JSON-based Localization
+Useful for full-sentence labels.
+```json
+{
+    "Active": "User is Active",
+    "Pending": "User is Pending"
+}
+```
+
+### PHP-based Localization
+Useful for structured keys.
+```php
+// lang/en/enums.php
+return [
+    'status' => [
+        'active' => 'Active User',
+        'pending' => 'Review Pending'
+    ]
+];
+```
+
+### Advanced Configuration (Replacements)
+You can provide translation replacements by returning an array from `getOptions()`:
+```php
+public static function getOptions(?string $labelMask = null): array {
+    return [
+        'active' => [
+            'key' => 'enums.status.active_count', 
+            'replace' => ['count' => User::where('active', true)->count()]
+        ]
+    ];
+}
+```
+
+### The `AutoFormLocalisedEnumOptions` Trait
+For Enums, you can use the `AutoFormLocalisedEnumOptions` trait to automate key generation:
+```php
+enum UserStatus: string implements AutoFormOptions {
+    use AutoFormLocalisedEnumOptions;
+    const OPTION_TRANSLATION_PREFIX = 'enums.user_status';
+
+    case ACTIVE = 'active';
+}
+```
+This automatically resolves to the translation key `enums.user_status.active`. You can also override the prefix dynamically by passing it as the `$labelMask` to `optionsFor('status', 'custom.prefix')`.
 
 ## Events
 
