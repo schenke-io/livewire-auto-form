@@ -16,9 +16,14 @@ use Throwable;
  * This trait provides the necessary logic to automatically generate option arrays
  * for select inputs, radio buttons, or checkbox groups. It can resolve options
  * from several sources:
- * - PHP BackedEnums (including those implementing `AutoFormOptions`).
- * - Eloquent relationships (BelongsTo, BelongsToMany).
- * - Custom option providers implementing the `AutoFormOptions` interface.
+ * - **PHP BackedEnums**: Automatically discovers Enums from model casts and supports
+ *   localization and custom label masks (e.g., `(name) - (value)`).
+ * - **Eloquent Relationships**: Resolves `BelongsTo` and `BelongsToMany` relations,
+ *   fetching related models and mapping them to `id` and `label` pairs.
+ * - **Custom Providers**: Supports any class implementing the `AutoFormOptions` interface,
+ *   allowing for complex or dynamic option generation.
+ * - **Label Masking**: Provides a robust mechanism for combining multiple model columns
+ *   into a single label string using parenthesis notation (e.g., `(first_name) (last_name)`).
  *
  * Role in Architecture:
  * It bridges the gap between the form model (Enums/Relations) and the UI,

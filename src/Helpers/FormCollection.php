@@ -12,6 +12,23 @@ use Traversable;
 /**
  * A specialized container for managing Livewire form state and metadata.
  *
+ * This class serves as the primary data structure for the "Single Buffer" pattern.
+ * It encapsulates both the raw form form and the metadata required to manage
+ * complex relationship editing and context switching.
+ *
+ * Internal Meta-data Structure (`$meta`):
+ * - `activeContext`: Identifies the current relationship being edited (empty for root).
+ * - `activeId`: The ID of the specific record being edited in the active context.
+ * - `rootModelClass`: The FQCN of the root Eloquent model.
+ * - `rootModelId`: The ID of the root model instance.
+ * - `nullables`: A list of fields that should convert empty strings to null.
+ * - `autoSave`: Flag indicating if changes should be persisted immediately.
+ *
+ * Wireable Compliance:
+ * Implements `Livewire\Wireable` to ensure the entire buffer and its metadata
+ * can be seamlessly serialized and de-serialized between Livewire server-side
+ * and client-side, preserving complex nested state across requests.
+ *
  * @property string $activeContext
  * @property int|string|null $activeId
  * @property string|null $rootModelClass

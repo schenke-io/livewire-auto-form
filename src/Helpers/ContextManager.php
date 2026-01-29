@@ -10,8 +10,14 @@ use Illuminate\Database\Eloquent\Model;
  * This class coordinates between the FormCollection state, the ModelResolver,
  * and the DataProcessor to ensure that the correct form is loaded into the
  * form's buffer when switching between editing the main model and its
- * associated relationships. It also handles the preservation of related
- * form during root model reloads.
+ * associated relationships.
+ *
+ * Context Stack Management:
+ * It handles the transition between the root model (empty context) and related
+ * models (named contexts). When switching to a relationship context, it extracts
+ * the specific related record's data. When returning to the root context, it
+ * optionally preserves any unsaved changes in related contexts, effectively
+ * managing a nested state stack within the flat `FormCollection` buffer.
  */
 class ContextManager
 {

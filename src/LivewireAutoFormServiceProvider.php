@@ -24,19 +24,27 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
  */
 class LivewireAutoFormServiceProvider extends PackageServiceProvider
 {
-    /**
-     * Registers services in the container.
-     *
-     * @codeCoverageIgnore
-     */
-    public function register(): void {}
 
     /**
      * Boots package services and resources.
      *
      * @codeCoverageIgnore
      */
-    public function boot(): void {}
+    public function boot(): void
+    {
+        parent::boot();
+
+        /*
+         * Register the resources/boost directory for guideline loading.
+         */
+        $this->loadViewsFrom(__DIR__.'/../resources/boost', 'livewire-auto-form-boost');
+
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/../resources/boost' => resource_path('boost/livewire-auto-form'),
+            ], 'livewire-auto-form-boost');
+        }
+    }
 
     /**
      * Configures the package's identification and resources.

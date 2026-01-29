@@ -5,13 +5,20 @@ namespace SchenkeIo\LivewireAutoForm\Helpers;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Handles the dynamic resolution of Eloquent model instances.
+ * Handles the dynamic resolution and re-hydration of Eloquent model instances.
  *
- * This class is responsible for re-hydrating models from the database based on
- * the current form state. It can resolve both the root model and related
- * models, ensuring that the latest foreign keys and buffered changes are
- * applied to the instances to facilitate accurate relationship traversal
- * and form persistence.
+ * This class is responsible for navigating the Eloquent model tree to instantiate
+ * or retrieve model records based on the current form state and context.
+ *
+ * Navigation Logic:
+ * - **Root Resolution**: Identifies and re-hydrates the root model using the stored
+ *   class name and ID. It can optionally apply the current buffered changes to the instance.
+ * - **Relationship Traversal**: Navigates nested relationship paths (e.g., `user.profile.address`)
+ *   by sequentially resolving each model in the chain. It supports both existing
+ *   related records (via `find($id)`) and new instances (for adding related records).
+ * - **State Application**: Ensures that as it traverses the tree, the current form state
+ *   (including unsaved foreign keys) is applied to intermediate models to ensure
+ *   accurate relationship resolution.
  */
 class ModelResolver
 {

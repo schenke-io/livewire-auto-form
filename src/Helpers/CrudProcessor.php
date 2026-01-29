@@ -16,17 +16,21 @@ use SchenkeIo\LivewireAutoForm\Helpers\RelationshipHandlers\RelationshipHandler;
 /**
  * CrudProcessor handles the persistence logic for root and related models.
  *
- * It is responsible for:
- * - Persisting form (Create/Update) for root models and their relationships.
- * - Managing complex relationship types: BelongsTo, HasMany, BelongsToMany, MorphMany.
- * - Handling deletion of related models.
- * - Processing real-time updates for auto-save and relationship-aware fields.
+ * It provides the robust Eloquent persistence layer for the package, responsible for:
+ * - **Root Model Persistence**: Force-filling and saving the root model while
+ *   automatically managing foreign keys for `BelongsTo` relationships discovered in the buffer.
+ * - **Relationship Management**: Handles `HasMany`, `BelongsToMany`, `BelongsTo`, and `MorphMany`
+ *   persistence through dedicated relationship handlers.
+ * - **Real-time Updates**: Manages individual field updates for "auto-save" functionality,
+ *   ensuring that data is correctly routed and sanitized before being saved to the database.
+ * - **Deletion Logic**: Orchestrates the deletion or dissociation of records, ensuring
+ *   consistent state and context cleanup.
  *
  * Role in Architecture:
- * This class decouples the form persistence logic from the main AutoForm class,
- * ensuring that complex Eloquent operations are handled in a centralized and
- * testable helper. It works closely with FormCollection (state storage),
- * ModelResolver (model instantiation), and DataProcessor (form sanitization).
+ * This class decouples the complex Eloquent operations from the Livewire components,
+ * providing a centralized, testable service for all database-bound operations. It works
+ * in concert with the `FormCollection` for state retrieval and `ModelResolver` for
+ * model re-hydration.
  */
 class CrudProcessor
 {

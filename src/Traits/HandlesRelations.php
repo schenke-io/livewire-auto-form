@@ -14,11 +14,15 @@ use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
  * 'address', 'phones', or 'tags').
  *
  * Key Capabilities:
- * - Switching form context to a specific related record (`edit`).
- * - Preparing the form for adding a new related record (`add`).
- * - Deleting related records with automatic context cleanup.
- * - Enforcing security by ensuring only relationships defined in `rules()` are accessible.
- * - Retrieving lists of related models for display in tables or select inputs.
+ * - **Context Switching**: Enables moving between the root model and related records using `edit()` and `add()`.
+ * - **Context Stack**: Maintains the `activeContext` and `activeId`, which determine which part of the
+ *   `FormCollection` buffer is currently being targeted by UI operations.
+ * - **Relationship Resolution**: Uses the `ModelResolver` to dynamically re-hydrate related models
+ *   and their current buffered changes for accurate traversal and persistence.
+ * - **Security Enforcement**: Strictly allows only those relationships that have corresponding
+ *   validation rules defined in the component's `rules()` method.
+ * - **Data Fetching**: Provides `getRelationList()` to retrieve collections of related models
+ *   with optimized column selection based on rule discovery.
  */
 trait HandlesRelations
 {

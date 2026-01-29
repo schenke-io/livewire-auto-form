@@ -7,10 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * Handles the extraction, filtering, and sanitization of model form.
  *
- * This class implements the Data Loading Strategy by ensuring that only fields
- * defined in the component's rules() are loaded into the form buffer. It also
- * provides utility methods for sanitizing input values, such as trimming strings
- * and converting empty strings to null for nullable fields.
+ * This class implements the Data Loading Strategy and provides robust
+ * input processing logic:
+ * - **Rule Discovery**: Parses Livewire validation rules to identify which fields
+ *   and relationships are eligible for loading into the form buffer. It supports
+ *   both simple and dot-notated relational rules.
+ * - **Field Extraction**: Intelligently extracts only allowed data from Eloquent
+ *   models, optimizing the form buffer size and ensuring data security.
+ * - **Field Sanitization**: Applies transformations to input values, including
+ *   trimming strings and converting empty strings to `null` for fields explicitly
+ *   marked as `nullable` in the rules.
+ * - **Shadowing Prevention**: Manages precedence between root model attributes and
+ *   relationship-aware fields.
  */
 class DataProcessor
 {

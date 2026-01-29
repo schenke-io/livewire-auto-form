@@ -14,10 +14,13 @@ use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
  * routing form through the robust buffering system.
  *
  * Key Responsibilities:
- * - Initialization of the `FormCollection` buffer.
- * - Routing property access and assignment between the component and the buffer.
- * - Implementation of `ArrayAccess` for flexible form interaction.
- * - Providing utility methods for form retrieval and state checking.
+ * - **Initialization**: Automatically boots the `FormCollection` buffer via Livewire lifecycle hooks.
+ * - **Property Routing**: Intercepts property access and assignment, intelligently routing
+ *   them to either class properties or the nested form buffer.
+ * - **State Accessors**: Provides methods like `all()`, `get()`, and `has()` for interacting
+ *   with the consolidated form state.
+ * - **ArrayAccess Implementation**: Enables the component to be used with array-like
+ *   syntax (e.g., `$this['field']`), which is essential for seamless Livewire binding.
  *
  * Role in Architecture:
  * It serves as the form foundation for both `AutoForm` and `AutoWizardForm`,
