@@ -44,6 +44,7 @@ Livewire Auto Form follows a **buffer-based state management** pattern. Instead 
 *   **Convention over Configuration:** By extending `AutoForm` and calling `setModel($model)`, the package manages field hydration and state transitions. Relationships and validation rules are defined in the component to maintain full control.
 *   **Context Switching:** Swap the active model within the same component seamlessly. You can move between the root model and its relations, or even switch between different instances of the same model type (the **"List & Edit"** pattern). The package manages the state transition and buffer hydration automatically.
 *   **Automatic Persistence:** Choose between real-time updates (`autoSave = true`) or manual submission. The package handles Eloquent `save()` calls and validation.
+*   **Automatic Data Flattening:** When loading data from models, any attribute that implements `Livewire\Wireable` (like Enums) is automatically flattened to its scalar value if possible. This ensures consistent data handling in the front-end and avoids serialization issues.
 *   **Standardized Options:** Use the `AutoFormOptions` interface to centralize option generation for selects and radios, with an automatic fallback for quick setups.
 *   **Multi-Step Workflows:** Use `AutoWizardForm` to split large forms into sequential steps with per-step validation and explicit field mapping.
 
@@ -67,6 +68,7 @@ composer require schenke-io/livewire-auto-form
     * [5. Listening for Events (Notifications)](#5-listening-for-events-notifications)
     * [6. List & Edit Pattern](#6-list-edit-pattern)
     * [7. Multi-Step Wizard](#7-multi-step-wizard)
+    * [8. Redirecting after Save](#8-redirecting-after-save)
 * [Multi-Step Wizards](#multi-step-wizards)
     * [Magic Features](#magic-features)
     * [Configuration](#configuration)
@@ -97,8 +99,13 @@ composer require schenke-io/livewire-auto-form
     * [PHP-based Localization](#php-based-localization)
     * [Advanced Configuration (Replacements)](#advanced-configuration-replacements)
     * [The `AutoFormLocalisedEnumOptions` Trait](#the-autoformlocalisedenumoptions-trait)
-  * [Events](#events)
   * [Exceptions](#exceptions)
+* [Event System](#event-system)
+  * [Available Events](#available-events)
+    * [1. `saved`](#1-saved)
+    * [2. `field-updated`](#2-field-updated)
+    * [3. `confirm-discard-changes`](#3-confirm-discard-changes)
+  * [Listening in Livewire](#listening-in-livewire)
 
 # Code Examples
 
@@ -408,6 +415,40 @@ class UserWizard extends AutoWizardForm
 
     <button type="submit">{{ $this->isLastStep() ? 'Finish' : 'Next' }}</button>
 </form>
+```
+
+---
+
+### 8. Redirecting after Save
+
+If you need to perform actions after a successful save, such as redirecting the user to another page, you can easily override the `save()` method in your component.
+
+**The Livewire Component:**
+```php
+class CreatePost extends AutoForm
+{
+    public function mount(Post $post)
+    {
+        $this->setModel($post);
+    }
+
+    public function rules(): array
+    {
+        return [
+            'title' => 'required',
+            'content' => 'required',
+        ];
+    }
+
+    public function save(): void
+    {
+        // 1. Call the parent save logic to persist the data
+        parent::save();
+
+        // 2. Perform your redirect
+        $this->redirect(route('posts.index'));
+    }
+}
 ```
 
 # Multi-Step Wizards
@@ -720,14 +761,6 @@ enum UserStatus: string implements AutoFormOptions {
 ```
 This automatically resolves to the translation key `enums.user_status.active`. You can also override the prefix dynamically by passing it as the `$labelMask` to `optionsFor('status', 'custom.prefix')`.
 
-## Events
-
-| Event | Parameters | When Dispatched |
-| --- | --- | --- |
-| `saved` | `context`, `id` | After successful `save()` or `delete()`. |
-| `field-updated` | `changed`, `context`, `id` | After auto-save (when `autoSave` is `true`). |
-| `confirm-discard-changes` | - | When switching context with unsaved changes. |
-
 ## Exceptions
 
 The package throws `SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException` for:
@@ -735,6 +768,67 @@ The package throws `SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException
 - **Rules Discrepancy**: Mismatches between data and `rules()`.
 - **Relation Errors**: Unsupported relationship types.
 - **Enum Errors**: Missing enum casts.
+
+# Event System
+
+Livewire Auto Form dispatches several browser events that you can listen for in Alpine.js or Livewire to provide real-time feedback to your users.
+
+## Available Events
+
+### 1. `saved`
+Dispatched after the entire form (or the active relationship context) has been successfully persisted to the database.
+
+**Parameters:**
+- `context` (string): The relationship context that was saved (empty string for the root model).
+- `id` (int|string|null): The ID of the model that was saved.
+
+**Example (Alpine.js):**
+```html
+<div x-on:saved.window="alert('Saved model ' + $event.detail.id + ' in context ' + $event.detail.context)">
+    <!-- ... -->
+</div>
+```
+
+---
+
+### 2. `field-updated`
+Dispatched when an individual field is automatically saved to the database (only when `autoSave` is enabled).
+
+**Parameters:**
+- `changed` (string): The name of the field that was updated.
+- `context` (string): The relationship context where the change occurred.
+- `id` (int|string|null): The ID of the model that was updated.
+
+**Example (Alpine.js):**
+```html
+<div x-on:field-updated.window="console.log('Field ' + $event.detail.changed + ' was updated!')">
+    <!-- ... -->
+</div>
+```
+
+---
+
+### 3. `confirm-discard-changes`
+Dispatched when a user action might result in losing unsaved changes in the buffer. This only happens when `autoSave` is disabled and the form buffer is not empty.
+
+**Parameters:**
+None.
+
+---
+
+## Listening in Livewire
+
+You can also listen for these events in other Livewire components using the `#[On]` attribute:
+
+```php
+use Livewire\Attributes\On;
+
+#[On('saved')]
+public function handleSave($context, $id)
+{
+    // Do something when a model is saved
+}
+```
 
 
 ---

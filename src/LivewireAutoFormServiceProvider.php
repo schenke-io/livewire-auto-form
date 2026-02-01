@@ -24,7 +24,6 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
  */
 class LivewireAutoFormServiceProvider extends PackageServiceProvider
 {
-
     /**
      * Boots package services and resources.
      *

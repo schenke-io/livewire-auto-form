@@ -75,3 +75,15 @@ class EditPost extends AutoForm
     - **Custom Providers**: Supports any class implementing the `AutoFormOptions` interface.
 - **Binding with `.blur` or `.live`**: Always bind to `form.*`. Use `.blur` for standard fields to reduce server roundtrips, or `.live` for fields that need to trigger immediate UI updates (like dependent selects).
 - **Validation-First**: The package automatically prefixes validation errors with `form.`, making them compatible with standard Livewire `@error('form.field')` directives.
+- **Event Listeners**: Leverage browser events (`saved`, `field-updated`) for UI feedback.
+- **Custom Post-Save Logic**: To redirect or perform extra actions after saving, override `save()` and call `parent::save()`.
+
+@verbatim
+<code-snippet name="Overriding save() with Redirect" lang="php">
+public function save(): void
+{
+    parent::save();
+    $this->redirect(route('posts.index'));
+}
+</code-snippet>
+@endverbatim

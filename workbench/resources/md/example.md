@@ -307,3 +307,37 @@ class UserWizard extends AutoWizardForm
     <button type="submit">{{ $this->isLastStep() ? 'Finish' : 'Next' }}</button>
 </form>
 ```
+
+---
+
+### 8. Redirecting after Save
+
+If you need to perform actions after a successful save, such as redirecting the user to another page, you can easily override the `save()` method in your component.
+
+**The Livewire Component:**
+```php
+class CreatePost extends AutoForm
+{
+    public function mount(Post $post)
+    {
+        $this->setModel($post);
+    }
+
+    public function rules(): array
+    {
+        return [
+            'title' => 'required',
+            'content' => 'required',
+        ];
+    }
+
+    public function save(): void
+    {
+        // 1. Call the parent save logic to persist the data
+        parent::save();
+
+        // 2. Perform your redirect
+        $this->redirect(route('posts.index'));
+    }
+}
+```

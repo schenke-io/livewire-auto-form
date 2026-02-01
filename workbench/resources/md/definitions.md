@@ -210,14 +210,6 @@ enum UserStatus: string implements AutoFormOptions {
 ```
 This automatically resolves to the translation key `enums.user_status.active`. You can also override the prefix dynamically by passing it as the `$labelMask` to `optionsFor('status', 'custom.prefix')`.
 
-## Events
-
-| Event | Parameters | When Dispatched |
-| --- | --- | --- |
-| `saved` | `context`, `id` | After successful `save()` or `delete()`. |
-| `field-updated` | `changed`, `context`, `id` | After auto-save (when `autoSave` is `true`). |
-| `confirm-discard-changes` | - | When switching context with unsaved changes. |
-
 ## Exceptions
 
 The package throws `SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException` for:

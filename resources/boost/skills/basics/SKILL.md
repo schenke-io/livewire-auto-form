@@ -12,6 +12,7 @@ Use this skill when you need to create or edit a single Eloquent model record us
 - **Boilerplate Reduction**: Extends `AutoForm` to handle all form mapping and state management.
 - **Rules-Driven**: Validation rules drive both the data loading and the persistence logic.
 - **Automatic Error Scoping**: Validation errors are automatically prefixed with `form.` for easy display.
+- **Model Refreshing**: Use `reloadModel(Model $model)` to synchronize the form buffer with a fresh model state.
 
 ## Implementation Example
 

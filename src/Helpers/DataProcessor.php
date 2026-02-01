@@ -3,6 +3,7 @@
 namespace SchenkeIo\LivewireAutoForm\Helpers;
 
 use Illuminate\Database\Eloquent\Model;
+use Livewire\Wireable;
 
 /**
  * Handles the extraction, filtering, and sanitization of model form.
@@ -37,6 +38,12 @@ class DataProcessor
 
         foreach ($allowedFields as $field) {
             $value = data_get($model, $field);
+
+            // Automatic flattening of simple Wireables
+            if ($value instanceof Wireable && ! is_array($v = $value->toLivewire())) {
+                $value = $v;
+            }
+
             data_set($filteredData, $field, $value);
         }
 
@@ -104,6 +111,11 @@ class DataProcessor
      */
     public function sanitizeValue(string $key, mixed $value, array $nullables): mixed
     {
+        // Flatten Wireables if they were passed manually
+        if ($value instanceof Wireable && ! is_array($v = $value->toLivewire())) {
+            $value = $v;
+        }
+
         // Handle "empty string to null" logic
         if ($value === '' && in_array($key, $nullables)) {
             return null;

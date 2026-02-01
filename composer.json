@@ -38,7 +38,7 @@
         "laravel/pint": "^1.24",
         "orchestra/testbench": "^10.2",
         "schenke-io/laravel-relation-manager": "^2.0",
-        "schenke-io/packaging-tools": "^0.1.5",
+        "schenke-io/packaging-tools": "^0.2",
         "spatie/laravel-ray": "^1.40",
         "barryvdh/laravel-ide-helper": "^3.5",
         "phpstan/phpstan-phpunit": "^2.0",
