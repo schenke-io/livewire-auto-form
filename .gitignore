@@ -40,3 +40,16 @@ auth.json
 GEMINI.md
 .badita.yaml
 tests/Browser/Screenshots
+/vendor
+/node_modules
+/app/storage
+/public/storage
+/public/hot
+/.gemini
+/.vscode
+/.ai
+.output.txt
+/__old
+/_old
+.run
+/build

@@ -42,6 +42,10 @@ class DataProcessor
             // Automatic flattening of simple Wireables
             if ($value instanceof Wireable && ! is_array($v = $value->toLivewire())) {
                 $value = $v;
+            } elseif ($value instanceof \BackedEnum) {
+                $value = $value->value;
+            } elseif ($value instanceof \UnitEnum) {
+                $value = $value->name;
             }
 
             data_set($filteredData, $field, $value);
@@ -114,6 +118,10 @@ class DataProcessor
         // Flatten Wireables if they were passed manually
         if ($value instanceof Wireable && ! is_array($v = $value->toLivewire())) {
             $value = $v;
+        } elseif ($value instanceof \BackedEnum) {
+            $value = $value->value;
+        } elseif ($value instanceof \UnitEnum) {
+            $value = $value->name;
         }
 
         // Handle "empty string to null" logic

@@ -2,11 +2,57 @@
 
 namespace Tests\Unit\Helpers;
 
+use Illuminate\Database\Eloquent\Model;
 use PHPUnit\Framework\TestCase;
 use SchenkeIo\LivewireAutoForm\Helpers\DataProcessor;
 
+enum BackedEnumTest: string
+{
+    case Alpha = 'alpha';
+}
+
+enum UnitEnumTest
+{
+    case Beta;
+}
+
+class EnumModelTest extends Model
+{
+    protected $guarded = [];
+}
+
 class DataProcessorTest extends TestCase
 {
+    public function test_extract_filtered_data_flattens_enums()
+    {
+        $processor = new DataProcessor;
+        $model = new EnumModelTest([
+            'backed' => BackedEnumTest::Alpha,
+            'unit' => UnitEnumTest::Beta,
+        ]);
+
+        $rules = [
+            'backed' => 'required',
+            'unit' => 'required',
+        ];
+
+        $data = $processor->extractFilteredData($model, $rules, '');
+
+        $this->assertEquals('alpha', $data['backed']);
+        $this->assertEquals('Beta', $data['unit']);
+    }
+
+    public function test_sanitize_value_flattens_enums()
+    {
+        $processor = new DataProcessor;
+
+        $backed = $processor->sanitizeValue('key', BackedEnumTest::Alpha, []);
+        $unit = $processor->sanitizeValue('key', UnitEnumTest::Beta, []);
+
+        $this->assertEquals('alpha', $backed);
+        $this->assertEquals('Beta', $unit);
+    }
+
     public function test_find_relations_identifies_nested_relations()
     {
         $processor = new DataProcessor;
