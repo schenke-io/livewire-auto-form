@@ -4,6 +4,7 @@ namespace SchenkeIo\LivewireAutoForm\Helpers;
 
 use Illuminate\Database\Eloquent\Model;
 use Livewire\Wireable;
+use Stringable;
 
 /**
  * Handles the extraction, filtering, and sanitization of model form.
@@ -39,9 +40,16 @@ class DataProcessor
         foreach ($allowedFields as $field) {
             $value = data_get($model, $field);
 
-            // Automatic flattening of simple Wireables
-            if ($value instanceof Wireable && ! is_array($v = $value->toLivewire())) {
-                $value = $v;
+            // Automatic flattening aligned with sanitizeValue():
+            // - Flatten Wireables only if they do not return arrays
+            // - Convert Stringable and Enums
+            if ($value instanceof Wireable) {
+                $toLivewire = $value->toLivewire();
+                if (! is_array($toLivewire)) {
+                    $value = $toLivewire;
+                }
+            } elseif ($value instanceof Stringable) {
+                $value = $value->__toString();
             } elseif ($value instanceof \BackedEnum) {
                 $value = $value->value;
             } elseif ($value instanceof \UnitEnum) {

@@ -39,7 +39,7 @@ use Traversable;
  * @implements ArrayAccess<string, mixed>
  * @implements IteratorAggregate<string, mixed>
  */
-final class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wireable
+class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wireable
 {
     public const string SYSTEM_KEY = '__system';
 
@@ -228,13 +228,19 @@ final class FormCollection implements ArrayAccess, Countable, IteratorAggregate,
 
     public function __isset(string $key): bool
     {
-        if (in_array($key, ['activeContext', 'activeId', 'rootModelClass', 'rootModelId', 'nullables', 'autoSave'])) {
-            return true;
-        }
-
-        return $this->has($key);
+        return match ($key) {
+            'activeContext' => $this->getActiveContext() !== '',
+            'activeId', 'rootModelId' => $this->getActiveId() !== null,
+            'rootModelClass' => $this->getRootModelClass() !== null,
+            'nullables' => $this->getNullables() !== [],
+            'autoSave' => true,
+            default => isset($this->items[$key]),
+        };
     }
 
+    /**
+     * @throws LivewireAutoFormException
+     */
     public function __set(string $key, mixed $value)
     {
         if ($key === self::SYSTEM_KEY) {

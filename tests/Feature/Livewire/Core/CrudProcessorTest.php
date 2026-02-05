@@ -647,22 +647,24 @@ it('reaches line 326 in CrudProcessor', function () {
     $state = new FormCollection;
     $state->setRootModel(City::class, $city->id);
     $state->autoSave = true;
-    $state->setContext('nonExistentRelation', 1);
+    $state->setContext('country', 1);
 
-    $mockCity = \Mockery::mock(City::class)->makePartial();
-    $mockCity->exists = true;
-    $mockCity->shouldReceive('getKeyName')->andReturn('id');
-    $mockCity->shouldReceive('forceFill')->andReturnSelf();
-    $mockCity->shouldReceive('save')->andReturn(true);
+    $mockCountry = \Mockery::mock(Country::class)->makePartial();
+    $mockCountry->exists = true;
+    $mockCountry->shouldReceive('getKeyName')->andReturn('id');
+    $mockCountry->shouldReceive('forceFill')->andReturnSelf();
+    $mockCountry->shouldReceive('save')->andReturn(true);
+    $mockCountry->shouldReceive('refresh')->andReturnSelf();
+    $mockCountry->shouldReceive('getTable')->andReturn('countries');
 
     $resolver = \Mockery::mock(ModelResolver::class);
-    $resolver->shouldReceive('resolve')->with($state, '', $city->id)->andReturn(new City);
-    $resolver->shouldReceive('resolve')->with($state, 'nonExistentRelation', 1)->andReturn($mockCity);
+    $resolver->shouldReceive('resolve')->with($state, '', $city->id)->andReturn($city);
+    $resolver->shouldReceive('resolve')->with($state, 'country', 1)->andReturn($mockCountry);
 
     $processor = new CrudProcessor($state, $resolver, new DataProcessor);
 
-    $result = $processor->updatedForm('nonExistentRelation.id', 1, []);
-    expect($result['saved'])->toBeTrue(); // Falls through to line 339
+    $result = $processor->updatedForm('country.id', 1, []);
+    expect($result['saved'])->toBeTrue();
 });
 
 it('reaches line 476 in CrudProcessor', function () {

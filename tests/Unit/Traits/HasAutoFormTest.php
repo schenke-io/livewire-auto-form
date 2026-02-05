@@ -49,6 +49,104 @@ class HasAutoFormTest extends TestCase
         $this->assertEquals([], $this->testClass->rules());
     }
 
+    public function test_get_inherited_rules_returns_component_rules_when_model_has_no_rules()
+    {
+        $model = new class extends \Illuminate\Database\Eloquent\Model
+        {
+            protected $guarded = [];
+
+            public function rules(): array
+            {
+                return [];
+            }
+        };
+
+        $component = new class($model) implements \ArrayAccess
+        {
+            use HasAutoForm;
+
+            public function __construct($m)
+            {
+                $this->form = new FormCollection;
+                $this->model = $m;
+            }
+
+            public function getPropertyName(): string
+            {
+                return 'form';
+            }
+
+            public function componentRules(): array
+            {
+                return ['name' => 'required'];
+            }
+
+            public function getActiveModel(): ?\Illuminate\Database\Eloquent\Model
+            {
+                return $this->model;
+            }
+        };
+
+        $rules = $component->rules();
+        $this->assertSame(['name' => 'required'], $rules);
+    }
+
+    public function test_get_inherited_rules_merges_and_filters()
+    {
+        $model = new class extends \Illuminate\Database\Eloquent\Model
+        {
+            protected $guarded = [];
+
+            public function rules(): array
+            {
+                return [
+                    'name' => 'required|string',
+                    'email' => 'email',
+                    'ignored' => 'sometimes',
+                ];
+            }
+        };
+
+        $component = new class($model) implements \ArrayAccess
+        {
+            use HasAutoForm;
+
+            public function __construct($m)
+            {
+                $this->form = new FormCollection;
+                $this->model = $m;
+            }
+
+            public function getPropertyName(): string
+            {
+                return 'form';
+            }
+
+            public function componentRules(): array
+            {
+                // Only these are mapped in the form; 'ignored' should be filtered out
+                return [
+                    'name' => 'sometimes',
+                    'email' => 'nullable',
+                ];
+            }
+
+            public function getActiveModel(): ?\Illuminate\Database\Eloquent\Model
+            {
+                return $this->model;
+            }
+        };
+
+        $rules = $component->rules();
+        // Contains model rules for fields used plus component overrides with precedence
+        $this->assertArrayHasKey('name', $rules);
+        $this->assertArrayHasKey('email', $rules);
+        $this->assertArrayNotHasKey('ignored', $rules);
+        // Component overrides should take precedence
+        $this->assertEquals('sometimes', $rules['name']);
+        $this->assertEquals('nullable', $rules['email']);
+    }
+
     public function test_validate_throws_validation_exception()
     {
         // Lines 111-113

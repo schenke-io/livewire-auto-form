@@ -78,16 +78,43 @@ class ModelResolverTest extends TestCase
         $this->assertEquals('New Name', $model->name);
     }
 
-    public function test_resolve_relation_with_id()
+    public function test_resolve_nested_relationship_traversal()
     {
         $country = Country::factory()->create();
         $city = City::factory()->create(['country_id' => $country->id]);
 
-        $this->state->rootModelClass = City::class;
-        $this->state->rootModelId = $city->id;
+        $this->state->rootModelClass = Country::class;
+        $this->state->rootModelId = $country->id;
 
-        $model = $this->resolver->resolve($this->state, 'country', $country->id);
-        $this->assertInstanceOf(Country::class, $model);
-        $this->assertEquals($country->id, $model->id);
+        // country.cities.id -> resolves to a city
+        $model = $this->resolver->resolve($this->state, 'cities', $city->id);
+        $this->assertInstanceOf(City::class, $model);
+        $this->assertEquals($city->id, $model->id);
+    }
+
+    public function test_resolve_nested_relationship_new_instance()
+    {
+        $country = Country::factory()->create();
+
+        $this->state->rootModelClass = Country::class;
+        $this->state->rootModelId = $country->id;
+
+        // country.cities with no ID -> resolves to new City instance
+        $model = $this->resolver->resolve($this->state, 'cities', null);
+        $this->assertInstanceOf(City::class, $model);
+        $this->assertFalse($model->exists);
+    }
+
+    public function test_resolve_applies_state_to_related_model()
+    {
+        $country = Country::factory()->create();
+        $city = City::factory()->create(['country_id' => $country->id]);
+
+        $this->state->rootModelClass = Country::class;
+        $this->state->rootModelId = $country->id;
+        $this->state->put('cities', [$city->id => ['name' => 'Updated City Name']]);
+
+        $model = $this->resolver->resolve($this->state, 'cities', $city->id);
+        $this->assertEquals('Updated City Name', $model->name);
     }
 }

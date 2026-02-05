@@ -72,6 +72,51 @@ trait HasAutoForm
      */
     public function rules(): array
     {
+        return $this->getInheritedRules($this->getActiveModel());
+    }
+
+    /**
+     * Reads rules from the model if available and merges with component overrides.
+     *
+     * @param  Model|null  $model  The model to read rules from.
+     * @return array<string, mixed> The merged rules.
+     */
+    public function getInheritedRules(?Model $model): array
+    {
+        $componentRules = $this->componentRules();
+        if (! $model) {
+            return $componentRules;
+        }
+
+        $modelRules = [];
+        if (method_exists($model, 'rules')) {
+            $modelRules = $model->rules();
+        }
+
+        if (empty($modelRules)) {
+            return $componentRules;
+        }
+
+        $processor = new DataProcessor;
+        $allowedFields = $processor->getAllowedFields($componentRules, '');
+
+        $inheritedRules = [];
+        foreach ($modelRules as $field => $rules) {
+            if (in_array($field, $allowedFields) || isset($componentRules[$field])) {
+                $inheritedRules[$field] = $rules;
+            }
+        }
+
+        return array_merge($inheritedRules, $componentRules);
+    }
+
+    /**
+     * Default component rules (to be overridden by the component).
+     *
+     * @return array<string, mixed>
+     */
+    public function componentRules(): array
+    {
         return [];
     }
 

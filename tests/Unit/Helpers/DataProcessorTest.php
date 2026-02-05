@@ -3,7 +3,10 @@
 namespace Tests\Unit\Helpers;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Stringable;
 use PHPUnit\Framework\TestCase;
+use SchenkeIo\Invoice\Casts\CurrencyCast;
+use SchenkeIo\Invoice\Money\Currency;
 use SchenkeIo\LivewireAutoForm\Helpers\DataProcessor;
 
 enum BackedEnumTest: string
@@ -23,34 +26,44 @@ class EnumModelTest extends Model
 
 class DataProcessorTest extends TestCase
 {
-    public function test_extract_filtered_data_flattens_enums()
+    public function test_extract_filtered_data_flattens_enums_and_stringable_and_currency()
     {
         $processor = new DataProcessor;
+        $stringable = new Stringable('hello');
+        $currency = Currency::fromAny('12,34 €');
         $model = new EnumModelTest([
             'backed' => BackedEnumTest::Alpha,
             'unit' => UnitEnumTest::Beta,
+            'note' => $stringable,
+            'price' => $currency,
         ]);
 
         $rules = [
             'backed' => 'required',
             'unit' => 'required',
+            'note' => 'sometimes',
+            'price' => CurrencyCast::class,
         ];
 
         $data = $processor->extractFilteredData($model, $rules, '');
 
         $this->assertEquals('alpha', $data['backed']);
         $this->assertEquals('Beta', $data['unit']);
+        $this->assertEquals('hello', $data['note']);
+        $this->assertEquals(12.34, $data['price']);
     }
 
-    public function test_sanitize_value_flattens_enums()
+    public function test_sanitize_value_flattens_enums_and_currency()
     {
         $processor = new DataProcessor;
 
         $backed = $processor->sanitizeValue('key', BackedEnumTest::Alpha, []);
         $unit = $processor->sanitizeValue('key', UnitEnumTest::Beta, []);
+        $currency = $processor->sanitizeValue('price', Currency::fromFloat(12.34), []);
 
         $this->assertEquals('alpha', $backed);
         $this->assertEquals('Beta', $unit);
+        $this->assertEquals(12.34, $currency);
     }
 
     public function test_find_relations_identifies_nested_relations()

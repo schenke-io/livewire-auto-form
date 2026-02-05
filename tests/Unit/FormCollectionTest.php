@@ -181,4 +181,58 @@ class FormCollectionTest extends TestCase
         $form->{'relation.field'} = 'value';
         $this->assertEquals(['field' => 'value'], $form->get('relation'));
     }
+
+    public function test_additional_coverage()
+    {
+        $form = new FormCollection(['a' => 1]);
+        $this->assertEquals(['a' => 1], $form->toArray());
+
+        $form->setActiveId(555);
+        $this->assertEquals(555, $form->activeId);
+
+        $form->forget('a');
+        $this->assertFalse($form->has('a'));
+
+        $form->put('b', 2);
+        $form->forget(['b']);
+        $this->assertFalse($form->has('b'));
+
+        $form->setContext('test', 123);
+        $this->assertTrue(isset($form->activeContext));
+        $this->assertFalse(isset($form->non_existent_meta));
+
+        $form->setContext('', null);
+        $this->assertFalse(isset($form->activeContext));
+        $this->assertFalse(isset($form->activeId));
+
+        $form->some_item = 'value';
+        $this->assertTrue(isset($form->some_item));
+        $this->assertFalse(isset($form->other_item));
+    }
+
+    public function test_offset_exists()
+    {
+        $form = new FormCollection(['a' => 1]);
+        $this->assertTrue(isset($form['a']));
+        $this->assertFalse(isset($form['b']));
+    }
+
+    public function test_offset_get()
+    {
+        $form = new FormCollection(['a' => 1]);
+        $this->assertEquals(1, $form['a']);
+    }
+
+    public function test_isset_for_nullables_and_autosave()
+    {
+        $form = new FormCollection;
+
+        // test nullables
+        $this->assertFalse(isset($form->nullables));
+        $form->nullables = ['field1'];
+        $this->assertTrue(isset($form->nullables));
+
+        // test autoSave
+        $this->assertTrue(isset($form->autoSave));
+    }
 }

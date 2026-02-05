@@ -245,6 +245,7 @@ class CrudProcessor
         }
 
         $model->forceFill([$realKey => $cleanValue])->save();
+        $model->refresh();
 
         return [
             'cleanValue' => $cleanValue,

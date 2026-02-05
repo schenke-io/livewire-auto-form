@@ -100,6 +100,9 @@ class ModelResolver
             if ($result instanceof Model && $applyState) {
                 $contextData = data_get($state->all(), $context, []);
                 if (is_array($contextData)) {
+                    if ($id !== null && isset($contextData[$id]) && is_array($contextData[$id])) {
+                        $contextData = $contextData[$id];
+                    }
                     foreach ($contextData as $k => $v) {
                         $stringKey = (string) $k;
                         if (! is_array($v) && $result->isFillable($stringKey)) {
