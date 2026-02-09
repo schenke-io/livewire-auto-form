@@ -47,20 +47,24 @@ trait HasAutoForm
      */
     public function setModel(?Model $model): void
     {
+        $this->initializeHasAutoForm();
+
         if ($model === null) {
             throw LivewireAutoFormException::rootModelRequired(static::class);
         }
 
+        // first set root model
+        $this->form->autoSave = $this->autoSave;
+        $class = $model::class;
+        $id = $model->exists ? $model->getKey() : null;
+        $this->form->setRootModel($class, $id);
+
+        // then call rules
         foreach (array_keys($this->rules()) as $key) {
             if ($key === FormCollection::SYSTEM_KEY) {
                 throw LivewireAutoFormException::forbiddenKey($key, static::class);
             }
         }
-
-        $this->form->autoSave = $this->autoSave;
-        $class = $model::class;
-        $id = $model->exists ? $model->getKey() : null;
-        $this->form->setRootModel($class, $id);
 
         $this->loadContext('', $id, true, $model);
     }
