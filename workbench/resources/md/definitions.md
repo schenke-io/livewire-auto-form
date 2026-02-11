@@ -120,6 +120,25 @@ Returns the root model instance with current buffer data applied.
 ### `getActiveModel()`
 Returns the model instance for the current active context (root or relation) with current buffer data applied.
 
+### `scanInheritedRules(array $ruleKeys, array $rules = [])`
+Scans for rules from the active model and its relationships. This is useful when you want to avoid duplicating validation rules already defined in your Eloquent models.
+
+- `$ruleKeys`: Array of field names (e.g., `['name', 'posts.title']`) to scan for.
+- `$rules`: Optional starting array of rules (component rules take precedence).
+
+Returns the merged rules array.
+
+**Example:**
+```php
+public function rules(): array
+{
+    return $this->scanInheritedRules(
+        ['name', 'email', 'posts.title'],
+        ['email' => 'nullable|email'] // override model rule
+    );
+}
+```
+
 ### `optionsFor(string $key, ?string $labelMask = null)`
 Universal helper for fetching [value => label] pairs for selection elements (selects, radios, checkboxes).
 

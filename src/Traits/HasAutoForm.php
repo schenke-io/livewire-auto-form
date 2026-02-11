@@ -92,10 +92,7 @@ trait HasAutoForm
             return $componentRules;
         }
 
-        $modelRules = [];
-        if (method_exists($model, 'rules')) {
-            $modelRules = $model->rules();
-        }
+        $modelRules = $this->getRulesFromModel($model);
 
         if (empty($modelRules)) {
             return $componentRules;
@@ -374,6 +371,78 @@ trait HasAutoForm
         if (! $this->autoSave && ! empty($this->form->toArray())) {
             $this->getComponent()->dispatch('confirm-discard-changes');
         }
+    }
+
+    /**
+     * Helper to get rules from a model instance.
+     * Checks for rules() method (static or instance) or rules property.
+     *
+     * @return array<string, mixed>
+     */
+    private function getRulesFromModel(Model $model): array
+    {
+        if (method_exists($model, 'rules')) {
+            return $model->rules();
+        }
+
+        if (property_exists($model, 'rules')) {
+            return $model->rules;
+        }
+
+        return [];
+    }
+
+    /**
+     * Scans for rules from the active model and its relationships.
+     *
+     * @param  string[]  $ruleKeys
+     * @param  array<string, mixed>  $rules  Initial rules where component overrides may be provided.
+     * @return array<string, mixed>
+     *
+     * @throws LivewireAutoFormException
+     */
+    protected function scanInheritedRules(array $ruleKeys, array $rules = []): array
+    {
+        $activeModel = $this->getActiveModel();
+        if (! $activeModel) {
+            return $rules;
+        }
+
+        foreach ($ruleKeys as $key) {
+            if (isset($rules[$key])) {
+                continue;
+            }
+
+            if (! str_contains($key, '.')) {
+                // simple key on active model
+                $modelRules = $this->getRulesFromModel($activeModel);
+                if (isset($modelRules[$key])) {
+                    $rules[$key] = $modelRules[$key];
+                } else {
+                    throw LivewireAutoFormException::ruleKeyNotFound($key, get_class($activeModel), static::class);
+                }
+            } else {
+                // dot notation
+                $parts = explode('.', $key);
+                $fieldName = array_pop($parts);
+                $relationPath = implode('.', $parts);
+
+                // resolve the related model
+                $relatedModel = $this->resolveModelInstance($relationPath, null);
+                if (! $relatedModel) {
+                    throw LivewireAutoFormException::relationDoesNotExist($relationPath, get_class($activeModel), static::class);
+                }
+
+                $modelRules = $this->getRulesFromModel($relatedModel);
+                if (isset($modelRules[$fieldName])) {
+                    $rules[$key] = $modelRules[$fieldName];
+                } else {
+                    throw LivewireAutoFormException::ruleKeyNotFound($fieldName, get_class($relatedModel), static::class);
+                }
+            }
+        }
+
+        return $rules;
     }
 
     /**

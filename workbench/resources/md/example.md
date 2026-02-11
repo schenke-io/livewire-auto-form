@@ -6,6 +6,25 @@ This guide provides examples for using the package, ranging from basic forms to 
 
 ### 1. The Basic Form (Manual Save)
 
+#### Using scanInheritedRules to avoid duplication
+You can let your models define `rules()` and inherit them in your component to keep validation logic in one place.
+
+```php
+use SchenkeIo\LivewireAutoForm\AutoForm;
+
+class EditPost extends AutoForm
+{
+    public function rules(): array
+    {
+        // Will fetch `name` and `author.email` rules from the active model
+        return $this->scanInheritedRules(
+            ['name', 'author.email'],
+            ['author.email' => 'nullable|email'] // component override takes precedence
+        );
+    }
+}
+```
+
 This is the simplest way to use the package. You extend `AutoForm` in your component and initialize it.
 
 **The Livewire Component:**

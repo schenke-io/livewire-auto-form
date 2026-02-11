@@ -131,4 +131,12 @@ class LivewireAutoFormException extends Exception
     {
         return self::make("Invalid options mask syntax: '{$mask}'. Mask must contain '(name)' or '(value)' for Enums, or '(field_name)' for Models.", $origin);
     }
+
+    /**
+     * Thrown when a key cannot be resolved during rule scanning.
+     */
+    public static function ruleKeyNotFound(string $key, string $model, string $origin): self
+    {
+        return self::make("Rule key '{$key}' could not be resolved on model '{$model}'.", $origin);
+    }
 }

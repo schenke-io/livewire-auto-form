@@ -116,6 +116,10 @@ abstract class AutoWizardForm extends BaseAutoForm
      * This method ensures that the user cannot proceed to the next step
      * until all fields required by the current step are valid. It uses
      * filtered rules based on the current step's fields.
+     *
+     * Tip: If your Eloquent models expose `rules()`, you can leverage
+     * `scanInheritedRules([...])` in your component's `rules()` implementation
+     * to avoid duplicating validation logic across steps.
      */
     public function next(): void
     {
@@ -168,6 +172,8 @@ abstract class AutoWizardForm extends BaseAutoForm
      *
      * Performs a full validation of all rules and verifies the wizard structure
      * before delegating to the trait's save method for persistence.
+     *
+     * @throws LivewireAutoFormException
      */
     public function save(): void
     {
