@@ -5,6 +5,16 @@ namespace Tests\Unit\Traits;
 use SchenkeIo\LivewireAutoForm\AutoFormOptions;
 use SchenkeIo\LivewireAutoForm\Traits\AutoFormLocalisedEnumOptions;
 
+uses()->group('traits');
+
+beforeEach(function () {
+    \Illuminate\Support\Facades\Schema::create('localised_models', function (\Illuminate\Database\Schema\Blueprint $table) {
+        $table->string('id')->primary();
+        $table->string('name')->nullable();
+        $table->timestamps();
+    });
+});
+
 enum ColorEnum: string implements AutoFormOptions
 {
     use AutoFormLocalisedEnumOptions;
@@ -21,6 +31,38 @@ enum PrefixedColorEnum: string implements AutoFormOptions
 
     case RED = 'red';
     case BLUE = 'blue';
+}
+
+enum IconColorEnum: string implements AutoFormOptions
+{
+    use AutoFormLocalisedEnumOptions;
+
+    case RED = 'red';
+    case BLUE = 'blue';
+
+    public function icon(): string
+    {
+        return 'heroicon-o-'.$this->value;
+    }
+}
+
+/**
+ * Helper model for testing localised options.
+ */
+class LocalisedModel extends \Illuminate\Database\Eloquent\Model implements AutoFormOptions
+{
+    use AutoFormLocalisedEnumOptions;
+
+    protected $table = 'localised_models';
+
+    protected $fillable = ['id', 'name'];
+
+    public $incrementing = false;
+
+    public function icon(): string
+    {
+        return 'heroicon-m-model';
+    }
 }
 
 it('generates options using default snake class prefix when no mask or constant provided', function () {
@@ -43,4 +85,20 @@ it('allows overriding prefix via labelMask parameter', function () {
 
     expect($options['red'])->toBe('ui.labels.colors.red')
         ->and($options['blue'])->toBe('ui.labels.colors.blue');
+});
+
+it('includes icons when icon() method exists', function () {
+    $options = IconColorEnum::getOptions();
+
+    expect($options['red'])->toBe(['icon_color_enum.red', 'heroicon-o-red'])
+        ->and($options['blue'])->toBe(['icon_color_enum.blue', 'heroicon-o-blue']);
+});
+
+it('generates options for models with localization and icons', function () {
+    LocalisedModel::create(['id' => 'm1', 'name' => 'Model 1']);
+
+    $options = LocalisedModel::getOptions();
+
+    expect($options)->toBeArray()
+        ->and($options['m1'])->toBe('localised_model.m1');
 });

@@ -3,6 +3,7 @@
 namespace SchenkeIo\LivewireAutoForm\Traits;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 use SchenkeIo\LivewireAutoForm\Helpers\ContextManager;
 use SchenkeIo\LivewireAutoForm\Helpers\CrudProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\DataProcessor;
@@ -133,7 +134,7 @@ trait HasAutoForm
      * @param  array<string, string>  $attributes  Optional custom attribute names.
      * @return array<string, mixed> The validated form.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function validate($rules = null, $messages = [], $attributes = []): array
     {
@@ -154,7 +155,7 @@ trait HasAutoForm
             }
 
             return $validated[$propertyName] ?? [];
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             throw $e;
         }
     }
@@ -171,7 +172,7 @@ trait HasAutoForm
      * @param  array<string, mixed>  $dataOverrides  Optional form to merge.
      * @return array<string, mixed> The validated form.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function validateOnly($field, $rules = null, $messages = [], $attributes = [], $dataOverrides = []): array
     {
@@ -188,7 +189,7 @@ trait HasAutoForm
             $validated = validator([$propertyName => $this->form->all()], $singleRule, $messages, $attributes)->validate();
 
             return $validated[$propertyName] ?? [];
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             throw $e;
         }
     }

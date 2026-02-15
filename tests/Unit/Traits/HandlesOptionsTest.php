@@ -32,6 +32,25 @@ enum EnumWithOptions: string implements AutoFormOptions
     }
 }
 
+enum EnumWithIcons: string implements AutoFormOptions
+{
+    use \SchenkeIo\LivewireAutoForm\Traits\AutoFormLocalisedEnumOptions;
+
+    case One = 'one';
+
+    public function icon(): string
+    {
+        return 'icon-one';
+    }
+}
+
+class ModelWithIconEnum extends \Illuminate\Database\Eloquent\Model
+{
+    protected $table = 'model_with_icon_enum';
+
+    protected $casts = ['status' => EnumWithIcons::class];
+}
+
 class ModelWithEnumRelation extends \Illuminate\Database\Eloquent\Model
 {
     protected $table = 'model_with_enum_relation';
@@ -88,6 +107,11 @@ beforeEach(function () {
         $table->string('status')->nullable();
         $table->timestamps();
     });
+    Schema::create('model_with_icon_enum', function (Blueprint $table) {
+        $table->id();
+        $table->string('status')->nullable();
+        $table->timestamps();
+    });
     Schema::create('model_with_rel_options', function (Blueprint $table) {
         $table->id();
         $table->timestamps();
@@ -135,6 +159,21 @@ it('resolves enum options using AutoFormOptions', function () {
 
     expect($options)->toBeArray()
         ->and($options)->toContain(['one', 'Custom One']);
+});
+
+it('resolves enum options with icons', function () {
+    $model = new ModelWithIconEnum;
+    $model->save();
+
+    $component = Livewire::test(FlexibleTestComponent::class, [
+        'model' => $model,
+        'rules' => ['status' => 'required'],
+    ]);
+
+    $options = $component->instance()->optionsFor('status');
+
+    expect($options)->toBeArray()
+        ->and($options)->toContain(['one', 'enum_with_icons.one', 'icon-one']);
 });
 
 it('resolves model options for a relation', function () {

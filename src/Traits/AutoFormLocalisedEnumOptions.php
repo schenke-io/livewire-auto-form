@@ -2,6 +2,7 @@
 
 namespace SchenkeIo\LivewireAutoForm\Traits;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 /**
@@ -33,7 +34,7 @@ trait AutoFormLocalisedEnumOptions
      * 3. A default prefix derived from the class name (e.g. "UserStatus" -> "user_status").
      *
      * @param  string|null  $labelMask  Optional prefix override
-     * @return array<string|int, string>
+     * @return array<string|int, string|array{0: string, 1: string}>
      */
     public static function getOptions(?string $labelMask = null): array
     {
@@ -43,7 +44,20 @@ trait AutoFormLocalisedEnumOptions
         if (enum_exists(static::class)) {
             foreach (static::cases() as $case) {
                 $value = $case instanceof \BackedEnum ? $case->value : $case->name;
-                $options[$value] = $prefix ? __("$prefix.$value") : (string) $value;
+
+                $key = $prefix ? "$prefix.$value" : (string) $value;
+                $label = __($key);
+                if (method_exists($case, 'icon')) {
+                    $options[$value] = [$label, $case->icon()];
+                } else {
+                    $options[$value] = $label;
+                }
+            }
+        } elseif (is_subclass_of(static::class, Model::class)) {
+            foreach (static::all() as $instance) {
+                $value = $instance->getKey();
+                $label = $prefix ? __("$prefix.$value") : ($instance->name ?? (string) $value);
+                $options[$value] = $label;
             }
         }
 
