@@ -60,7 +60,7 @@ class ContextManager
             // we keep what we have for relations
             $relationsData = [];
             if ($preserveRelations) {
-                $relations = $this->processor->findRelations($rules);
+                $relations = $this->processor->findRelations($rules, '', $model);
 
                 foreach ($relations as $rel) {
                     if ($this->state->has($rel)) {

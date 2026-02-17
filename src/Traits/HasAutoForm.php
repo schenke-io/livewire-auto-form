@@ -100,7 +100,7 @@ trait HasAutoForm
         }
 
         $processor = new DataProcessor;
-        $allowedFields = $processor->getAllowedFields($componentRules, '');
+        $allowedFields = $processor->getAllowedFields($componentRules, '', $model);
 
         $inheritedRules = [];
         foreach ($modelRules as $field => $rules) {

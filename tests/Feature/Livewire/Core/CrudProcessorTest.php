@@ -831,6 +831,7 @@ it('saveRelatedModel uses update when no handler is found', function () {
     $mockRelation->shouldReceive('getRelated')->andReturn($city);
 
     $mockModel = \Mockery::mock(City::class)->makePartial();
+    $mockModel->shouldReceive('isRelation')->with('someRelation')->andReturn(true);
     $mockModel->shouldReceive('someRelation')->andReturn($mockRelation);
     $mockModel->shouldReceive('update')->once()->andReturn(true);
 

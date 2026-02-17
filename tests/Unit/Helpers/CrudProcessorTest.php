@@ -7,6 +7,7 @@ use Mockery;
 use SchenkeIo\LivewireAutoForm\Helpers\CrudProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\DataProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
+use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
 use SchenkeIo\LivewireAutoForm\Helpers\ModelResolver;
 use SchenkeIo\LivewireAutoForm\Helpers\RelationshipHandlers\RelationshipHandler;
 
@@ -136,4 +137,64 @@ it('delete() delegates to handler when relation is provided', function () {
     $handler->shouldReceive('delete')->with($relationObj, $rootModel, 'tags', 789)->once();
 
     $this->crudProcessor->delete('tags', 789);
+});
+
+it('resolveRelation() throws LivewireAutoFormException when relation does not exist', function () {
+    $rootModel = Mockery::mock(Model::class);
+    $rootModel->shouldReceive('isRelation')->with('invalid_rel')->andReturn(false);
+
+    $reflection = new \ReflectionClass(CrudProcessor::class);
+    $method = $reflection->getMethod('resolveRelation');
+    $method->setAccessible(true);
+
+    $this->expectException(LivewireAutoFormException::class);
+    $this->expectExceptionMessage('Relation [invalid_rel] does not exist on ['.get_class($rootModel).'].');
+
+    $method->invoke($this->crudProcessor, $rootModel, 'invalid_rel');
+});
+
+it('saveRootModel ignores exceptions when probing relation keys (covers catch at line 132)', function () {
+    $rootModel = Mockery::mock(Model::class);
+
+    // First pass: ensure the dotted key is not treated as a direct relation form block
+    $rootModel->shouldReceive('isRelation')->with('broken.id')->andReturn(false);
+
+    // Fallback discovery: treat the first segment as a relation name
+    $rootModel->shouldReceive('isRelation')->with('broken')->andReturn(true);
+
+    // Saving with empty root data is still allowed
+    $rootModel->shouldReceive('forceFill')->with([])->andReturnSelf();
+    $rootModel->shouldReceive('save')->once();
+    $rootModel->shouldReceive('refresh')->once();
+
+    $reflection = new \ReflectionClass(CrudProcessor::class);
+    $method = $reflection->getMethod('saveRootModel');
+    $method->setAccessible(true);
+
+    // Provide state nullables (not used here but part of sanitizeValue signature if reached)
+    $this->state->shouldReceive('getNullables')->andReturn([]);
+
+    // Calling an undefined relation method on the mock (broken()) will throw a BadMethodCallException
+    // which must be swallowed by the try/catch in saveRootModel.
+    $method->invoke($this->crudProcessor, $rootModel, ['broken.id' => 123]);
+
+    expect(true)->toBeTrue(); // If we arrive here, the exception was caught and ignored
+});
+
+it('resolveRelation breaks on non-Model intermediate results and throws (covers break at line 384)', function () {
+    $rootModel = Mockery::mock(Model::class);
+
+    // First segment is a valid relation
+    $rootModel->shouldReceive('isRelation')->with('cities')->andReturn(true);
+
+    // Accessing dynamic property returns a Collection (not a Model), triggering the break path
+    $rootModel->shouldReceive('getAttribute')->with('cities')->andReturn(collect());
+
+    $reflection = new \ReflectionClass(CrudProcessor::class);
+    $method = $reflection->getMethod('resolveRelation');
+    $method->setAccessible(true);
+
+    $this->expectException(LivewireAutoFormException::class);
+
+    $method->invoke($this->crudProcessor, $rootModel, 'cities.nonexistent');
 });

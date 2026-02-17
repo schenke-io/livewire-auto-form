@@ -53,7 +53,7 @@ it('loads root context and merges data while preserving relations', function () 
     $processor->shouldReceive('extractFilteredData')->andReturn($data)->once();
 
     // Preservation logic
-    $processor->shouldReceive('findRelations')->with($rules)->andReturn(['address'])->once();
+    $processor->shouldReceive('findRelations')->with($rules, '', $model)->andReturn(['address'])->once();
     $state->shouldReceive('has')->with('address')->andReturn(true)->once();
     $state->shouldReceive('get')->with('address')->andReturn(['city' => 'NY'])->once();
 

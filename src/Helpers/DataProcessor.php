@@ -34,7 +34,7 @@ class DataProcessor
      */
     public function extractFilteredData(Model $model, array $rules, string $context): array
     {
-        $allowedFields = $this->getAllowedFields($rules, $context);
+        $allowedFields = $this->getAllowedFields($rules, $context, $model);
         $filteredData = [];
 
         foreach ($allowedFields as $field) {
@@ -76,9 +76,10 @@ class DataProcessor
      *
      * @param  array<string, mixed>  $rules  The validation rules.
      * @param  string  $context  The context (empty for root, or relation name).
+     * @param  Model|null  $model  The model instance to verify relations.
      * @return array<int, string> The list of allowed fields.
      */
-    public function getAllowedFields(array $rules, string $context): array
+    public function getAllowedFields(array $rules, string $context, ?Model $model = null): array
     {
         $allowedFields = [];
         foreach ($rules as $ruleKey => $rule) {
@@ -100,7 +101,7 @@ class DataProcessor
             }
         }
 
-        foreach ($this->findRelations($rules, $context) as $relation) {
+        foreach ($this->findRelations($rules, $context, $model) as $relation) {
             if ($relation !== 'pivot') {
                 $allowedFields[] = $relation.'_id';
             }
@@ -182,9 +183,10 @@ class DataProcessor
      *
      * @param  array<string, mixed>  $rules  The validation rules.
      * @param  string  $context  The context (empty for root, or relation name).
+     * @param  Model|null  $model  The model instance to verify relations.
      * @return array<int, string> The list of unique relation names.
      */
-    public function findRelations(array $rules, string $context = ''): array
+    public function findRelations(array $rules, string $context = '', ?Model $model = null): array
     {
         $relations = [];
         $prefix = $context === '' ? '' : $context.'.';
@@ -195,7 +197,11 @@ class DataProcessor
             }
             $relativeKey = substr($cleanKey, strlen($prefix));
             if (str_contains($relativeKey, '.')) {
-                $relations[] = explode('.', $relativeKey)[0];
+                $relationCandidate = explode('.', $relativeKey)[0];
+                if ($model && ! $model->isRelation($relationCandidate)) {
+                    continue;
+                }
+                $relations[] = $relationCandidate;
             }
         }
 

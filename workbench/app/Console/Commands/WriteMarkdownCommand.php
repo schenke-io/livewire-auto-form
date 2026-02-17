@@ -24,6 +24,7 @@ class WriteMarkdownCommand extends Command
         $assembler->addMarkdown('example.md');
         $assembler->addMarkdown('wizard.md');
         $assembler->addMarkdown('definitions.md');
+        $assembler->addMarkdown('persistence.md');
         $assembler->addMarkdown('events.md');
 
         $assembler->writeMarkdown('README.md');

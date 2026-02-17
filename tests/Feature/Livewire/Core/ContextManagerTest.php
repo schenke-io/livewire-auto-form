@@ -37,17 +37,17 @@ it('forgets relation form when related model not found in loadContext', function
 
 it('preserves existing relation data when reloading root context', function () {
     $state = new FormCollection;
-    $state->put('cities', ['name' => 'Existing City']);
+    $state->put('country', ['name' => 'Existing Country']);
 
     $city = \Workbench\App\Models\City::factory()->create();
     $resolver = \Mockery::mock(ModelResolver::class);
     $resolver->shouldReceive('resolve')->andReturn($city);
 
-    // rules contain 'cities.name'
-    $rules = ['cities.name' => 'required', 'name' => 'required'];
+    // rules contain 'country.name'
+    $rules = ['country.name' => 'required', 'name' => 'required'];
 
     $manager = new ContextManager($state, $resolver, new DataProcessor);
     $manager->loadContext('', $city->id, $rules, true);
 
-    expect($state->get('cities'))->toBe(['name' => 'Existing City']);
+    expect($state->get('country'))->toBe(['name' => 'Existing Country']);
 });

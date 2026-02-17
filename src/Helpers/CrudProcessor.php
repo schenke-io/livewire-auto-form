@@ -117,7 +117,7 @@ class CrudProcessor
                 $field = 'id';
             }
 
-            if ($context) {
+            if ($context && $root->isRelation($context)) {
                 try {
                     $relation = $root->{$context}();
                     if ($relation instanceof BelongsTo) {
@@ -372,6 +372,9 @@ class CrudProcessor
         $current = $root;
 
         foreach ($parts as $index => $part) {
+            if (! $current->isRelation($part)) {
+                break;
+            }
             if ($index === count($parts) - 1) {
                 return $current->{$part}();
             }
