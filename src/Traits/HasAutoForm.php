@@ -74,50 +74,20 @@ trait HasAutoForm
      * Retrieves validation rules defined in the parent Livewire component.
      *
      * @return array<string, mixed>
+     *
+     * @throws LivewireAutoFormException
      */
     public function rules(): array
     {
-        return $this->getInheritedRules($this->getActiveModel());
+        return $this->scanInheritedRules($this->ruleKeys());
     }
 
     /**
-     * Reads rules from the model if available and merges with component overrides.
+     * Filters which model fields are included in the form.
      *
-     * @param  Model|null  $model  The model to read rules from.
-     * @return array<string, mixed> The merged rules.
+     * @return string[]
      */
-    public function getInheritedRules(?Model $model): array
-    {
-        $componentRules = $this->componentRules();
-        if (! $model) {
-            return $componentRules;
-        }
-
-        $modelRules = $this->getRulesFromModel($model);
-
-        if (empty($modelRules)) {
-            return $componentRules;
-        }
-
-        $processor = new DataProcessor;
-        $allowedFields = $processor->getAllowedFields($componentRules, '', $model);
-
-        $inheritedRules = [];
-        foreach ($modelRules as $field => $rules) {
-            if (in_array($field, $allowedFields) || isset($componentRules[$field])) {
-                $inheritedRules[$field] = $rules;
-            }
-        }
-
-        return array_merge($inheritedRules, $componentRules);
-    }
-
-    /**
-     * Default component rules (to be overridden by the component).
-     *
-     * @return array<string, mixed>
-     */
-    public function componentRules(): array
+    public function ruleKeys(): array
     {
         return [];
     }
@@ -134,7 +104,7 @@ trait HasAutoForm
      * @param  array<string, string>  $attributes  Optional custom attribute names.
      * @return array<string, mixed> The validated form.
      *
-     * @throws ValidationException
+     * @throws ValidationException|LivewireAutoFormException
      */
     public function validate($rules = null, $messages = [], $attributes = []): array
     {
@@ -146,18 +116,14 @@ trait HasAutoForm
             $prefixedRules[$prefixedKey] = $value;
         }
 
-        try {
-            $data = [$propertyName => $this->form->all()];
-            $validated = validator($data, $prefixedRules, $messages, $attributes)->validate();
+        $data = [$propertyName => $this->form->all()];
+        $validated = validator($data, $prefixedRules, $messages, $attributes)->validate();
 
-            foreach (array_keys($prefixedRules) as $key) {
-                $this->resetErrorBag($key);
-            }
-
-            return $validated[$propertyName] ?? [];
-        } catch (ValidationException $e) {
-            throw $e;
+        foreach (array_keys($prefixedRules) as $key) {
+            $this->resetErrorBag($key);
         }
+
+        return $validated[$propertyName] ?? [];
     }
 
     /**
@@ -172,7 +138,7 @@ trait HasAutoForm
      * @param  array<string, mixed>  $dataOverrides  Optional form to merge.
      * @return array<string, mixed> The validated form.
      *
-     * @throws ValidationException
+     * @throws ValidationException|LivewireAutoFormException
      */
     public function validateOnly($field, $rules = null, $messages = [], $attributes = [], $dataOverrides = []): array
     {
@@ -185,13 +151,9 @@ trait HasAutoForm
         $rule = $rules[$field] ?? $rules[$prefixedField] ?? $rules[$fieldInRules] ?? 'nullable';
         $singleRule = [$prefixedField => $rule];
 
-        try {
-            $validated = validator([$propertyName => $this->form->all()], $singleRule, $messages, $attributes)->validate();
+        $validated = validator([$propertyName => $this->form->all()], $singleRule, $messages, $attributes)->validate();
 
-            return $validated[$propertyName] ?? [];
-        } catch (ValidationException $e) {
-            throw $e;
-        }
+        return $validated[$propertyName] ?? [];
     }
 
     /**
@@ -199,6 +161,8 @@ trait HasAutoForm
      *
      * This performs a full validation of all rules and then uses the
      * `CrudProcessor` to persist changes for the active context.
+     *
+     * @throws LivewireAutoFormException
      */
     public function save(): void
     {
@@ -209,6 +173,8 @@ trait HasAutoForm
 
     /**
      * Internal save logic without full validation.
+     *
+     * @throws LivewireAutoFormException
      */
     protected function traitSave(): void
     {
@@ -313,6 +279,8 @@ trait HasAutoForm
 
     /**
      * Populates the FormCollection based on the active model or relationship.
+     *
+     * @throws LivewireAutoFormException
      */
     protected function loadContext(string $context, string|int|null $id, bool $preserve = true, ?Model $model = null): void
     {
@@ -326,7 +294,7 @@ trait HasAutoForm
     }
 
     /**
-     * Returns the root model instance with current form form applied.
+     * Returns the root model instance with current form applied.
      */
     public function getModel(): ?Model
     {
@@ -335,7 +303,9 @@ trait HasAutoForm
 
     /**
      * Returns the model instance for the current active context (root or relation)
-     * with current form form applied.
+     * with current form applied.
+     *
+     * @throws LivewireAutoFormException
      */
     public function getActiveModel(): ?Model
     {
@@ -356,6 +326,8 @@ trait HasAutoForm
 
     /**
      * Resolves a model instance.
+     *
+     * @throws LivewireAutoFormException
      */
     public function resolveModelInstance(string $context, int|string|null $id): ?Model
     {
@@ -415,7 +387,7 @@ trait HasAutoForm
             }
 
             if (! str_contains($key, '.')) {
-                // simple key on active model
+                // simple key on an active model
                 $modelRules = $this->getRulesFromModel($activeModel);
                 if (isset($modelRules[$key])) {
                     $rules[$key] = $modelRules[$key];

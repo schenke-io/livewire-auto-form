@@ -76,9 +76,14 @@ class HasAutoFormTest extends TestCase
                 return 'form';
             }
 
-            public function componentRules(): array
+            public function ruleKeys(): array
             {
-                return ['name' => 'required'];
+                return ['name'];
+            }
+
+            public function rules(): array
+            {
+                return $this->scanInheritedRules($this->ruleKeys(), ['name' => 'required']);
             }
 
             public function getActiveModel(): ?\Illuminate\Database\Eloquent\Model
@@ -122,13 +127,20 @@ class HasAutoFormTest extends TestCase
                 return 'form';
             }
 
-            public function componentRules(): array
+            public function ruleKeys(): array
             {
-                // Only these are mapped in the form; 'ignored' should be filtered out
                 return [
+                    'name',
+                    'email',
+                ];
+            }
+
+            public function rules(): array
+            {
+                return $this->scanInheritedRules($this->ruleKeys(), [
                     'name' => 'sometimes',
                     'email' => 'nullable',
-                ];
+                ]);
             }
 
             public function getActiveModel(): ?\Illuminate\Database\Eloquent\Model

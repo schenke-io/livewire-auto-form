@@ -18,7 +18,7 @@ This approach ensures that your components remain clean, predictable, and easy t
 
 `AutoForm` can inherit validation rules from your Eloquent model and normalize complex value objects in a predictable way.
 
-- Rule Inheritance: If your model exposes a `rules(): array` method, the trait will merge those rules with your component's rules. Only fields actually mapped in your component's rules are inherited. Component rules always take precedence.
+- Rule Inheritance: If your model exposes a `rules(): array` method, the trait will inherit those rules based on the keys you provide in `ruleKeys()`. You can also override inherited rules directly in the `rules()` method by passing them as a second argument to `scanInheritedRules()`.
 
   Example:
   ```php
@@ -28,16 +28,24 @@ This approach ensures that your components remain clean, predictable, and easy t
       return [
           'name' => 'required|string',
           'email' => 'email',
+          'internal_code' => 'string',
       ];
   }
 
   // In your component
-  public function componentRules(): array
+  public function ruleKeys(): array
   {
       return [
-          'name' => 'sometimes', // overrides model rule
-          'email' => 'nullable',
+          'name',
+          'email',
       ];
+  }
+
+  public function rules(): array
+  {
+      return $this->scanInheritedRules($this->ruleKeys(), [
+          'name' => 'sometimes', // overrides model rule
+      ]);
   }
   ```
 

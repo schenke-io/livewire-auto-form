@@ -55,7 +55,7 @@ This approach ensures that your components remain clean, predictable, and easy t
 
 `AutoForm` can inherit validation rules from your Eloquent model and normalize complex value objects in a predictable way.
 
-- Rule Inheritance: If your model exposes a `rules(): array` method, the trait will merge those rules with your component's rules. Only fields actually mapped in your component's rules are inherited. Component rules always take precedence.
+- Rule Inheritance: If your model exposes a `rules(): array` method, the trait will inherit those rules based on the keys you provide in `ruleKeys()`. You can also override inherited rules directly in the `rules()` method by passing them as a second argument to `scanInheritedRules()`.
 
   Example:
   ```php
@@ -65,16 +65,24 @@ This approach ensures that your components remain clean, predictable, and easy t
       return [
           'name' => 'required|string',
           'email' => 'email',
+          'internal_code' => 'string',
       ];
   }
 
   // In your component
-  public function componentRules(): array
+  public function ruleKeys(): array
   {
       return [
-          'name' => 'sometimes', // overrides model rule
-          'email' => 'nullable',
+          'name',
+          'email',
       ];
+  }
+
+  public function rules(): array
+  {
+      return $this->scanInheritedRules($this->ruleKeys(), [
+          'name' => 'sometimes', // overrides model rule
+      ]);
   }
   ```
 
@@ -96,7 +104,7 @@ composer require schenke-io/livewire-auto-form
     * [Installation](#installation)
 * [Code Examples](#code-examples)
     * [1. The Basic Form (Manual Save)](#1-the-basic-form-manual-save)
-      * [Using scanInheritedRules to avoid duplication](#using-scaninheritedrules-to-avoid-duplication)
+      * [Using scanInheritedRules with ruleKeys() to avoid duplication](#using-scaninheritedrules-with-rulekeys-to-avoid-duplication)
     * [2. Modern "Auto-Save" Experience](#2-modern-auto-save-experience)
     * [3. Handling Relationships](#3-handling-relationships)
     * [4. Using Enums for Selects](#4-using-enums-for-selects)
@@ -128,6 +136,7 @@ composer require schenke-io/livewire-auto-form
     * [`isEdited(string $relation, int|string $id)`](#isedited-string-relation-int-string-id)
     * [`getModel()`](#getmodel)
     * [`getActiveModel()`](#getactivemodel)
+    * [`ruleKeys()`](#rulekeys)
     * [`scanInheritedRules(array $ruleKeys, array $rules = [])`](#scaninheritedrules-array-rulekeys-array-rules)
     * [`optionsFor(string $key, ?string $labelMask = null)`](#optionsfor-string-key-string-labelmask-null)
   * [Localization](#localization)
@@ -154,19 +163,24 @@ This guide provides examples for using the package, ranging from basic forms to 
 
 ### <a name="1-the-basic-form-manual-save"></a>1. The Basic Form (Manual Save)
 
-#### <a name="using-scaninheritedrules-to-avoid-duplication"></a>Using scanInheritedRules to avoid duplication
-You can let your models define `rules()` and inherit them in your component to keep validation logic in one place.
+#### <a name="using-scaninheritedrules-with-rulekeys-to-avoid-duplication"></a>Using scanInheritedRules with ruleKeys() to avoid duplication
+You can let your models define `rules()` and inherit them in your component to keep validation logic in one place. Use `ruleKeys()` to declare which fields to inherit and pass overrides to `scanInheritedRules()` when needed.
 
 ```php
 use SchenkeIo\LivewireAutoForm\AutoForm;
 
 class EditPost extends AutoForm
 {
-    public function rules(): array
+    public function ruleKeys(): array
     {
         // Will fetch `name` and `author.email` rules from the active model
+        return ['name', 'author.email'];
+    }
+
+    public function rules(): array
+    {
         return $this->scanInheritedRules(
-            ['name', 'author.email'],
+            $this->ruleKeys(),
             ['author.email' => 'nullable|email'] // component override takes precedence
         );
     }
@@ -627,10 +641,15 @@ class MyComponent extends AutoForm
 
     public function rules(): array
     {
+        return $this->scanInheritedRules($this->ruleKeys());
+    }
+
+    public function ruleKeys(): array
+    {
         return [
-            'name' => 'required',
-            'email' => 'required|email',
-            'posts.title' => 'required' // Relation support
+            'name',
+            'email',
+            'posts.title' // Relation support
         ];
     }
 }
@@ -729,24 +748,18 @@ Returns the root model instance with current buffer data applied.
 ### <a name="getactivemodel"></a>`getActiveModel()`
 Returns the model instance for the current active context (root or relation) with current buffer data applied.
 
+### <a name="rulekeys"></a>`ruleKeys()`
+Defines which model fields are included in the form and should have their validation rules inherited. Returns an array of strings (e.g., `['name', 'posts.title']`).
+
 ### <a name="scaninheritedrules-array-rulekeys-array-rules"></a>`scanInheritedRules(array $ruleKeys, array $rules = [])`
-Scans for rules from the active model and its relationships. This is useful when you want to avoid duplicating validation rules already defined in your Eloquent models.
+Scans for rules from the active model and its relationships. This is used by the default `rules()` implementation to avoid duplicating validation rules already defined in your Eloquent models.
 
 - `$ruleKeys`: Array of field names (e.g., `['name', 'posts.title']`) to scan for.
 - `$rules`: Optional starting array of rules (component rules take precedence).
 
 Returns the merged rules array.
 
-**Example:**
-```php
-public function rules(): array
-{
-    return $this->scanInheritedRules(
-        ['name', 'email', 'posts.title'],
-        ['email' => 'nullable|email'] // override model rule
-    );
-}
-```
+**Strict Validation**: If a key in `ruleKeys()` cannot be resolved on the active model or if a relationship path is invalid, a `LivewireAutoFormException` is thrown.
 
 ### <a name="optionsfor-string-key-string-labelmask-null"></a>`optionsFor(string $key, ?string $labelMask = null)`
 Universal helper for fetching [value => label] pairs for selection elements (selects, radios, checkboxes).

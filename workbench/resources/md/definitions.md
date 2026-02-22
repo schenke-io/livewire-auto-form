@@ -18,10 +18,15 @@ class MyComponent extends AutoForm
 
     public function rules(): array
     {
+        return $this->scanInheritedRules($this->ruleKeys());
+    }
+
+    public function ruleKeys(): array
+    {
         return [
-            'name' => 'required',
-            'email' => 'required|email',
-            'posts.title' => 'required' // Relation support
+            'name',
+            'email',
+            'posts.title' // Relation support
         ];
     }
 }
@@ -120,24 +125,18 @@ Returns the root model instance with current buffer data applied.
 ### `getActiveModel()`
 Returns the model instance for the current active context (root or relation) with current buffer data applied.
 
+### `ruleKeys()`
+Defines which model fields are included in the form and should have their validation rules inherited. Returns an array of strings (e.g., `['name', 'posts.title']`).
+
 ### `scanInheritedRules(array $ruleKeys, array $rules = [])`
-Scans for rules from the active model and its relationships. This is useful when you want to avoid duplicating validation rules already defined in your Eloquent models.
+Scans for rules from the active model and its relationships. This is used by the default `rules()` implementation to avoid duplicating validation rules already defined in your Eloquent models.
 
 - `$ruleKeys`: Array of field names (e.g., `['name', 'posts.title']`) to scan for.
 - `$rules`: Optional starting array of rules (component rules take precedence).
 
 Returns the merged rules array.
 
-**Example:**
-```php
-public function rules(): array
-{
-    return $this->scanInheritedRules(
-        ['name', 'email', 'posts.title'],
-        ['email' => 'nullable|email'] // override model rule
-    );
-}
-```
+**Strict Validation**: If a key in `ruleKeys()` cannot be resolved on the active model or if a relationship path is invalid, a `LivewireAutoFormException` is thrown.
 
 ### `optionsFor(string $key, ?string $labelMask = null)`
 Universal helper for fetching [value => label] pairs for selection elements (selects, radios, checkboxes).
