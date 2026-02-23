@@ -303,17 +303,25 @@ trait HasAutoForm
 
     /**
      * Returns the model instance for the current active context (root or relation)
-     * with current form applied.
+     * with the current form applied.
      *
      * @throws LivewireAutoFormException
      */
     public function getActiveModel(): ?Model
     {
-        if ($this->form->getActiveContext()) {
-            return (new ModelResolver)->resolve($this->form, $this->form->getActiveContext(), $this->form->getActiveId());
+        $context = $this->form->getActiveContext();
+        $id = $this->form->getActiveId();
+
+        if ($context === '') {
+            return null;
         }
 
-        return null;
+        return (new ModelResolver)->resolve(
+            $this->form,
+            $context,
+            $id,
+            true
+        );
     }
 
     /**
@@ -376,6 +384,10 @@ trait HasAutoForm
      */
     protected function scanInheritedRules(array $ruleKeys, array $rules = []): array
     {
+        if ($ruleKeys === []) {
+            return $rules;
+        }
+
         $activeModel = $this->getActiveModel();
         if (! $activeModel) {
             return $rules;
