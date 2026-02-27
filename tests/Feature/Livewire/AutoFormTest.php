@@ -27,17 +27,6 @@ it('can get the root model via getModel()', function () {
     expect($city->refresh()->name)->toBe('Original Name');
 });
 
-it('returns null for getActiveModel() when no context is active', function () {
-    $city = City::factory()->create();
-
-    $component = Livewire::test(FlexibleTestComponent::class, [
-        'model' => $city,
-        'rules' => ['name' => 'required'],
-    ]);
-
-    expect($component->instance()->getActiveModel())->toBeNull();
-});
-
 it('can get the active model via getActiveModel() when in a relation context', function () {
     $country = Country::factory()->create();
     $city = City::factory()->create(['country_id' => $country->id, 'name' => 'Original City']);

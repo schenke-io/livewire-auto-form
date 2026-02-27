@@ -312,10 +312,6 @@ trait HasAutoForm
         $context = $this->form->getActiveContext();
         $id = $this->form->getActiveId();
 
-        if ($context === '') {
-            return null;
-        }
-
         return (new ModelResolver)->resolve(
             $this->form,
             $context,
