@@ -24,6 +24,8 @@ class CityShowEditor extends Component
     use EditorHelper;
     use \SchenkeIo\LivewireAutoForm\Traits\HasAutoForm;
 
+    public int $counter = 0;
+
     public City $city;
 
     public function boot(): void
@@ -31,17 +33,31 @@ class CityShowEditor extends Component
         $this->initializeHasAutoForm();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
+        return $this->scanInheritedRules();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function ruleKeys(): array
+    {
         return [
-            'name' => 'nullable|string|max:255',
-            'background' => 'nullable|string|max:200',
-            'population' => 'nullable|integer|min:0',
-            'is_capital' => 'boolean',
-            'group' => 'nullable|string',
-            'country_id' => 'required|exists:countries,id',
-            'country.name' => 'nullable|string|max:255',
-            'country.code' => 'nullable|string|max:2',
+            'name',
+            'background',
+            'population',
+            'is_capital',
+            'country_id',
+            'geo.latitude',
+            'geo.longitude',
+            'geo.diameter',
+            'geo.height',
+            'country.name',
+            'country.code',
         ];
     }
 

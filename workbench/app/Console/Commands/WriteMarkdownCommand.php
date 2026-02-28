@@ -20,6 +20,7 @@ class WriteMarkdownCommand extends Command
 
         $assembler->addMarkdown('why.md');
         $assembler->addMarkdown('introduction.md');
+        $assembler->addMarkdown('usage.md');
         $assembler->addTableOfContents();
         $assembler->addMarkdown('example.md');
         $assembler->addMarkdown('wizard.md');

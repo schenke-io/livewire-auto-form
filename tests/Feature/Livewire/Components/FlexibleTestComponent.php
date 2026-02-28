@@ -6,6 +6,7 @@ use SchenkeIo\LivewireAutoForm\AutoForm;
 
 class FlexibleTestComponent extends AutoForm
 {
+    /** @var array<string, mixed> */
     public array $customRules = [];
 
     /**
@@ -13,7 +14,7 @@ class FlexibleTestComponent extends AutoForm
      */
     public $mockModel = null;
 
-    public function mount($model = null, array $rules = [], $mockModel = null): void
+    public function mount(?object $model = null, array $rules = [], ?object $mockModel = null): void
     {
         $this->customRules = $rules;
         $this->mockModel = $mockModel;
@@ -47,6 +48,12 @@ class FlexibleTestComponent extends AutoForm
 
     public bool $useRealValidation = false;
 
+    /**
+     * @param  ?array<string, mixed>  $rules
+     * @param  array<string, mixed>  $messages
+     * @param  array<string, mixed>  $attributes
+     * @return array<string, mixed>
+     */
     public function validate($rules = null, $messages = [], $attributes = []): array
     {
         if ($this->useRealValidation) {
@@ -57,6 +64,14 @@ class FlexibleTestComponent extends AutoForm
         return ['form' => $this->form->all()];
     }
 
+    /**
+     * @param  string  $field
+     * @param  ?array<string, mixed>  $rules
+     * @param  array<string, mixed>  $messages
+     * @param  array<string, mixed>  $attributes
+     * @param  array<string, mixed>  $dataOverrides
+     * @return array<string, mixed>
+     */
     public function validateOnly($field, $rules = null, $messages = [], $attributes = [], $dataOverrides = []): array
     {
         if ($this->useRealValidation) {
@@ -67,12 +82,12 @@ class FlexibleTestComponent extends AutoForm
         return [$field => data_get($this, $field)];
     }
 
-    public function deleteRootModel()
+    public function deleteRootModel(): void
     {
         $this->getModel()?->delete();
     }
 
-    public function render()
+    public function render(): string
     {
         return '<div></div>';
     }

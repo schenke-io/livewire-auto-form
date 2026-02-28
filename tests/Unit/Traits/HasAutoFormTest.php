@@ -10,7 +10,7 @@ use Tests\TestCase;
 
 class HasAutoFormTest extends TestCase
 {
-    private $testClass;
+    private object $testClass;
 
     protected function setUp(): void
     {
@@ -29,9 +29,9 @@ class HasAutoFormTest extends TestCase
                 return 'form';
             }
 
-            public function resetErrorBag($key = null) {}
+            public function resetErrorBag($key = null): void {}
 
-            public function loadContext($context, $id, $applyState = true, $model = null) {}
+            public function loadContext($context, $id, $applyState = true, $model = null): void {}
         };
     }
 
@@ -55,6 +55,7 @@ class HasAutoFormTest extends TestCase
         {
             protected $guarded = [];
 
+            /** @return array<string, mixed> */
             public function rules(): array
             {
                 return [];
@@ -76,14 +77,16 @@ class HasAutoFormTest extends TestCase
                 return 'form';
             }
 
+            /** @return list<string> */
             public function ruleKeys(): array
             {
                 return ['name'];
             }
 
+            /** @return array<string, mixed> */
             public function rules(): array
             {
-                return $this->scanInheritedRules($this->ruleKeys(), ['name' => 'required']);
+                return $this->scanInheritedRules(['name' => 'required']);
             }
 
             public function getActiveModel(): ?\Illuminate\Database\Eloquent\Model
@@ -102,6 +105,7 @@ class HasAutoFormTest extends TestCase
         {
             protected $guarded = [];
 
+            /** @return array<string, mixed> */
             public function rules(): array
             {
                 return [
@@ -127,6 +131,7 @@ class HasAutoFormTest extends TestCase
                 return 'form';
             }
 
+            /** @return list<string> */
             public function ruleKeys(): array
             {
                 return [
@@ -135,9 +140,10 @@ class HasAutoFormTest extends TestCase
                 ];
             }
 
+            /** @return array<string, mixed> */
             public function rules(): array
             {
-                return $this->scanInheritedRules($this->ruleKeys(), [
+                return $this->scanInheritedRules([
                     'name' => 'sometimes',
                     'email' => 'nullable',
                 ]);
@@ -171,6 +177,7 @@ class HasAutoFormTest extends TestCase
                 $this->form = new FormCollection(['name' => '']);
             }
 
+            /** @return array<string, mixed> */
             public function rules(): array
             {
                 return ['name' => 'required'];
@@ -200,6 +207,7 @@ class HasAutoFormTest extends TestCase
                 $this->form = new FormCollection(['name' => 'John']);
             }
 
+            /** @return array<string, mixed> */
             public function rules(): array
             {
                 return ['name' => 'required'];
@@ -234,6 +242,7 @@ class HasAutoFormTest extends TestCase
                 $this->form = new FormCollection(['name' => '']);
             }
 
+            /** @return array<string, mixed> */
             public function rules(): array
             {
                 return ['name' => 'required'];
@@ -268,6 +277,7 @@ class HasAutoFormTest extends TestCase
                 $this->processor = $p;
             }
 
+            /** @return array<string, mixed> */
             public function rules(): array
             {
                 return ['name' => 'required'];
@@ -369,6 +379,7 @@ class HasAutoFormTest extends TestCase
                 $this->processor = $p;
             }
 
+            /** @return array<string, mixed> */
             public function rules(): array
             {
                 return ['name' => 'required'];

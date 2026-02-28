@@ -42,18 +42,24 @@ trait AutoFormLocalisedEnumOptions
 
         $options = [];
         if (enum_exists(static::class)) {
+            /** @phpstan-ignore-next-line */
             foreach (static::cases() as $case) {
+                /** @phpstan-ignore-next-line */
                 $value = $case instanceof \BackedEnum ? $case->value : $case->name;
 
                 $key = $prefix ? "$prefix.$value" : (string) $value;
                 $label = __($key);
+                /** @phpstan-ignore-next-line */
                 if (method_exists($case, 'icon')) {
+                    /** @phpstan-ignore-next-line */
                     $options[$value] = [$label, $case->icon()];
                 } else {
                     $options[$value] = $label;
                 }
             }
+            /** @phpstan-ignore-next-line */
         } elseif (is_subclass_of(static::class, Model::class)) {
+            /** @phpstan-ignore-next-line */
             foreach (static::all() as $instance) {
                 $value = $instance->getKey();
                 $label = $prefix ? __("$prefix.$value") : ($instance->name ?? (string) $value);

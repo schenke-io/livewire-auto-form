@@ -31,6 +31,7 @@ it('validates structure on mount', function () {
         $this->fail('Exception not thrown');
     } catch (\Throwable $e) {
         $actual = $e instanceof \Illuminate\View\ViewException ? $e->getPrevious() : $e;
+        /** @var \Throwable $actual */
         expect($actual)->toBeInstanceOf(LivewireAutoFormException::class);
         expect($actual->getMessage())->toContain('[Tests\Feature\Livewire\Components\TestWizard]');
         expect($actual->getMessage())->toContain('population');
@@ -49,16 +50,18 @@ it('can navigate through steps', function () {
         ],
     ]);
 
+    /** @var TestWizard $instance */
+    $instance = $component->instance();
     expect($component->get('currentStepIndex'))->toBe(0);
-    expect($component->instance()->isStepActive(0))->toBeTrue();
-    expect($component->instance()->isLastStep())->toBeFalse();
+    expect($instance->isStepActive(0))->toBeTrue();
+    expect($instance->isLastStep())->toBeFalse();
 
-    $component->instance()->next();
+    $instance->next();
     expect($component->get('currentStepIndex'))->toBe(1);
-    expect($component->instance()->isStepActive(1))->toBeTrue();
-    expect($component->instance()->isLastStep())->toBeTrue();
+    expect($instance->isStepActive(1))->toBeTrue();
+    expect($instance->isLastStep())->toBeTrue();
 
-    $component->instance()->previous();
+    $instance->previous();
     expect($component->get('currentStepIndex'))->toBe(0);
 });
 
@@ -135,6 +138,7 @@ it('throws exception if field in structure is not in rules', function () {
         $this->fail('Exception not thrown');
     } catch (\Throwable $e) {
         $actual = $e instanceof \Illuminate\View\ViewException ? $e->getPrevious() : $e;
+        /** @var \Throwable $actual */
         expect($actual)->toBeInstanceOf(LivewireAutoFormException::class);
     }
 });
@@ -148,5 +152,7 @@ it('returns empty array if step index is invalid in getStepFields', function () 
         'structure' => ['step1' => ['name']],
     ]);
 
-    expect($component->instance()->getStepFields(999))->toBe([]);
+    /** @var TestWizard $instance */
+    $instance = $component->instance();
+    expect($instance->getStepFields(999))->toBe([]);
 });

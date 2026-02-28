@@ -55,7 +55,7 @@ This approach ensures that your components remain clean, predictable, and easy t
 
 `AutoForm` can inherit validation rules from your Eloquent model and normalize complex value objects in a predictable way.
 
-- Rule Inheritance: If your model exposes a `rules(): array` method, the trait will inherit those rules based on the keys you provide in `ruleKeys()`. You can also override inherited rules directly in the `rules()` method by passing them as a second argument to `scanInheritedRules()`.
+- Rule Inheritance: If your model exposes a `rules(): array` method, the trait will inherit those rules based on the keys you provide in `ruleKeys()`. You can also override inherited rules directly in the `rules()` method by passing them to `scanInheritedRules()`.
 
   Example:
   ```php
@@ -80,7 +80,7 @@ This approach ensures that your components remain clean, predictable, and easy t
 
   public function rules(): array
   {
-      return $this->scanInheritedRules($this->ruleKeys(), [
+      return $this->scanInheritedRules([
           'name' => 'sometimes', // overrides model rule
       ]);
   }
@@ -97,11 +97,82 @@ This approach ensures that your components remain clean, predictable, and easy t
 composer require schenke-io/livewire-auto-form
 ```
 
+# <a name="usage-patterns"></a>Usage Patterns
+
+## <a name="editing-nested-json-attributes"></a>Editing Nested JSON Attributes
+
+Livewire Auto Form seamlessly supports Laravel's JSON-casted attributes. When you have a model with a JSON column, you can use dot-notation in `ruleKeys()` to include specific nested keys in your form buffer.
+
+### <a name="model-setup"></a>Model Setup
+Ensure your model has the attribute cast to an array or object.
+
+```php
+class User extends Model
+{
+    protected $casts = [
+        'settings' => 'array',
+    ];
+
+    public function rules(): array
+    {
+        return [
+            'settings.theme' => 'required|string',
+            'settings.notifications.email' => 'boolean',
+        ];
+    }
+}
+```
+
+### <a name="component-setup"></a>Component Setup
+Use `ruleKeys()` to declare the nested JSON keys you want to edit. The package will automatically hydrate the form buffer with the nested values and handle the dotted state.
+
+```php
+class EditUserSettings extends AutoForm
+{
+    public function mount(User $user)
+    {
+        $this->setModel($user);
+    }
+
+    public function ruleKeys(): array
+    {
+        return [
+            'settings.theme',
+            'settings.notifications.email',
+        ];
+    }
+
+    public function rules(): array
+    {
+        return $this->scanInheritedRules();
+    }
+}
+```
+
+### <a name="blade-view"></a>Blade View
+Bind your inputs to the nested keys in the `$form` object.
+
+```html
+<select wire:model.blur="form.settings.theme">
+    <option value="light">Light</option>
+    <option value="dark">Dark</option>
+</select>
+
+<input type="checkbox" wire:model.blur="form.settings.notifications.email">
+```
+
+The package's "Single Buffer" architecture ensures that when you save, the entire JSON structure is correctly merged and persisted back to the model attribute.
+
 * [Livewire Auto Form](#livewire-auto-form)
 * [Concept of Coding](#concept-of-coding)
     * [Core Principles](#core-principles)
     * [Rule Inheritance & Value Normalization](#rule-inheritance-value-normalization)
     * [Installation](#installation)
+* [Usage Patterns](#usage-patterns)
+  * [Editing Nested JSON Attributes](#editing-nested-json-attributes)
+    * [Model Setup](#model-setup)
+    * [Component Setup](#component-setup)
+    * [Blade View](#blade-view)
 * [Code Examples](#code-examples)
     * [1. The Basic Form (Manual Save)](#1-the-basic-form-manual-save)
       * [Using scanInheritedRules with ruleKeys() to avoid duplication](#using-scaninheritedrules-with-rulekeys-to-avoid-duplication)
@@ -137,7 +208,7 @@ composer require schenke-io/livewire-auto-form
     * [`getModel()`](#getmodel)
     * [`getActiveModel()`](#getactivemodel)
     * [`ruleKeys()`](#rulekeys)
-    * [`scanInheritedRules(array $ruleKeys, array $rules = [])`](#scaninheritedrules-array-rulekeys-array-rules)
+    * [`scanInheritedRules(array $rules = [])`](#scaninheritedrules-array-rules)
     * [`optionsFor(string $key, ?string $labelMask = null)`](#optionsfor-string-key-string-labelmask-null)
   * [Localization](#localization)
     * [JSON-based Localization](#json-based-localization)
@@ -180,7 +251,6 @@ class EditPost extends AutoForm
     public function rules(): array
     {
         return $this->scanInheritedRules(
-            $this->ruleKeys(),
             ['author.email' => 'nullable|email'] // component override takes precedence
         );
     }
@@ -641,7 +711,7 @@ class MyComponent extends AutoForm
 
     public function rules(): array
     {
-        return $this->scanInheritedRules($this->ruleKeys());
+        return $this->scanInheritedRules();
     }
 
     public function ruleKeys(): array
@@ -751,11 +821,10 @@ Returns the model instance for the current active context (root or relation) wit
 ### <a name="rulekeys"></a>`ruleKeys()`
 Defines which model fields are included in the form and should have their validation rules inherited. Returns an array of strings (e.g., `['name', 'posts.title']`).
 
-### <a name="scaninheritedrules-array-rulekeys-array-rules"></a>`scanInheritedRules(array $ruleKeys, array $rules = [])`
+### <a name="scaninheritedrules-array-rules"></a>`scanInheritedRules(array $rules = [])`
 Scans for rules from the active model and its relationships. This is used by the default `rules()` implementation to avoid duplicating validation rules already defined in your Eloquent models.
 
-- `$ruleKeys`: Array of field names (e.g., `['name', 'posts.title']`) to scan for.
-- `$rules`: Optional starting array of rules (component rules take precedence).
+- `$rules`: Optional starting array of rules (component rules take precedence). The method automatically uses the keys returned by `ruleKeys()`.
 
 Returns the merged rules array.
 

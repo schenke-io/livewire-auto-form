@@ -23,7 +23,6 @@ class EditPost extends AutoForm
     public function rules(): array
     {
         return $this->scanInheritedRules(
-            $this->ruleKeys(),
             ['author.email' => 'nullable|email'] // component override takes precedence
         );
     }

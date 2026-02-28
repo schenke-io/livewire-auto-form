@@ -4,7 +4,10 @@ namespace Tests\Feature\Livewire\Components\Models;
 
 class ModelWithException extends \Illuminate\Database\Eloquent\Model
 {
-    public function getCasts()
+    /**
+     * @return array<string, string>
+     */
+    public function getCasts(): array
     {
         throw new \Exception('Test Exception');
     }

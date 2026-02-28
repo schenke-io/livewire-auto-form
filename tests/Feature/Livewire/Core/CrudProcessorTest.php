@@ -61,9 +61,14 @@ it('saves related model with BelongsToMany and pivot form', function () {
 
     $neighbor = Country::where('name', 'Neighbor Country')->first();
     expect($neighbor)->not->toBeNull();
+    /** @var Country $neighbor */
     expect($country->borders()->where('neighbor_id', $neighbor->id)->exists())->toBeTrue();
 
-    $pivot = $country->borders()->where('neighbor_id', $neighbor->id)->first()->pivot;
+    $neighborRelation = $country->borders()->where('neighbor_id', $neighbor->id)->first();
+    expect($neighborRelation)->not->toBeNull();
+    /** @var Country $neighborRelation */
+    $pivot = $neighborRelation->pivot;
+    /** @var object{border_length_km: int} $pivot */
     expect($pivot->border_length_km)->toBe(100);
 });
 
@@ -89,7 +94,11 @@ it('attaches existing model in BelongsToMany relationship', function () {
     $method->invoke($processor, $country, 'borders', null, $allData);
 
     expect($country->borders()->where('neighbor_id', $neighbor->id)->exists())->toBeTrue();
-    $pivot = $country->borders()->where('neighbor_id', $neighbor->id)->first()->pivot;
+    $related = $country->borders()->where('neighbor_id', $neighbor->id)->first();
+    expect($related)->not->toBeNull();
+    /** @var Country $related */
+    $pivot = $related->pivot;
+    /** @var object{border_length_km: int} $pivot */
     expect($pivot->border_length_km)->toBe(200);
 });
 
@@ -118,7 +127,11 @@ it('updates related model fields via BelongsToMany relationship', function () {
 
     $neighbor->refresh();
     expect($neighbor->name)->toBe('New Name');
-    $pivot = $country->borders()->where('neighbor_id', $neighbor->id)->first()->pivot;
+    $related = $country->borders()->where('neighbor_id', $neighbor->id)->first();
+    expect($related)->not->toBeNull();
+    /** @var Country $related */
+    $pivot = $related->pivot;
+    /** @var object{border_length_km: int} $pivot */
     expect($pivot->border_length_km)->toBe(75);
 });
 
@@ -137,7 +150,11 @@ it('updates pivot fields via updatedForm', function () {
     $result = $processor->updatedForm('borders.pivot.border_length_km', 150, []);
 
     expect($result['saved'])->toBeTrue();
-    $pivot = $country->borders()->where('neighbor_id', $neighbor->id)->first()->pivot;
+    $related = $country->borders()->where('neighbor_id', $neighbor->id)->first();
+    expect($related)->not->toBeNull();
+    /** @var Country $related */
+    $pivot = $related->pivot;
+    /** @var object{border_length_km: int} $pivot */
     expect($pivot->border_length_km)->toBe(150);
 });
 
@@ -147,12 +164,11 @@ it('throws relationDoesNotExist exception for invalid nested relation', function
     $state->setRootModel(City::class, $city->id);
     $processor = getProcessor($state);
 
-    $this->expectException(\SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException::class);
-
     $method = new \ReflectionMethod(CrudProcessor::class, 'resolveRelation');
     $method->setAccessible(true);
     // 'name' is a field (string), not a model, so 'name.something' should trigger the exception
-    $method->invoke($processor, $city, 'name.something');
+    expect(fn () => $method->invoke($processor, $city, 'name.something'))
+        ->toThrow(\SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException::class);
 });
 
 it('covers the save method', function () {
@@ -584,6 +600,7 @@ it('covers delete for BelongsTo (set foreign key to null)', function () {
     $mockCity->shouldReceive('country')->andReturn($relation);
     $mockCity->shouldReceive('update')->with(['country_id' => null])->once()->andReturn(true);
 
+    /** @var \Mockery\MockInterface&\SchenkeIo\LivewireAutoForm\Helpers\ModelResolver $resolver */
     $resolver = \Mockery::mock(ModelResolver::class);
     $resolver->shouldReceive('resolve')->andReturn($mockCity);
 
@@ -634,6 +651,7 @@ it('reaches line 301 in CrudProcessor', function () {
     $state->setRootModel(City::class, $city->id);
     $state->autoSave = true;
 
+    /** @var \Mockery\MockInterface&\SchenkeIo\LivewireAutoForm\Helpers\ModelResolver $resolver */
     $resolver = \Mockery::mock(ModelResolver::class);
     $resolver->shouldReceive('resolve')->andReturn(null);
 
@@ -657,6 +675,7 @@ it('reaches line 326 in CrudProcessor', function () {
     $mockCountry->shouldReceive('refresh')->andReturnSelf();
     $mockCountry->shouldReceive('getTable')->andReturn('countries');
 
+    /** @var \Mockery\MockInterface&\SchenkeIo\LivewireAutoForm\Helpers\ModelResolver $resolver */
     $resolver = \Mockery::mock(ModelResolver::class);
     $resolver->shouldReceive('resolve')->with($state, '', $city->id)->andReturn($city);
     $resolver->shouldReceive('resolve')->with($state, 'country', 1)->andReturn($mockCountry);
@@ -798,6 +817,7 @@ it('covers updatedForm when target model does not exist', function () {
     $mockModel->shouldReceive('getAttribute')->andReturn(null);
     $mockModel->exists = false;
 
+    /** @var \Mockery\MockInterface&\SchenkeIo\LivewireAutoForm\Helpers\ModelResolver $resolver */
     $resolver = \Mockery::mock(ModelResolver::class);
     $resolver->shouldReceive('resolve')->with($state, '', $city->id)->andReturn($city);
     $resolver->shouldReceive('resolve')->with($state, '', null)->andReturn($mockModel);
@@ -835,6 +855,7 @@ it('saveRelatedModel uses update when no handler is found', function () {
     $mockModel->shouldReceive('someRelation')->andReturn($mockRelation);
     $mockModel->shouldReceive('update')->once()->andReturn(true);
 
+    /** @var \Mockery\MockInterface&\SchenkeIo\LivewireAutoForm\Helpers\ModelResolver $resolver */
     $resolver = \Mockery::mock(ModelResolver::class);
     $resolver->shouldReceive('resolve')->with($state, '', $city->id)->andReturn($mockModel);
     $resolver->shouldReceive('resolve')->with($state, 'someRelation', null)->andReturn($mockModel);

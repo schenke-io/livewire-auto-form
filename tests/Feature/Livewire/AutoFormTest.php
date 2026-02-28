@@ -17,7 +17,10 @@ it('can get the root model via getModel()', function () {
 
     $component->set('form.name', 'Updated Name');
 
-    $model = $component->instance()->getModel();
+    /** @var FlexibleTestComponent $instance */
+    $instance = $component->instance();
+    /** @var City $model */
+    $model = $instance->getModel();
 
     expect($model)->toBeInstanceOf(City::class)
         ->and($model->id)->toBe($city->id)
@@ -41,14 +44,21 @@ it('can get the active model via getActiveModel() when in a relation context', f
         ->call('edit', 'cities', $city->id)
         ->set('form.cities.name', 'Updated City');
 
-    $activeModel = $component->instance()->getActiveModel();
+    /** @var FlexibleTestComponent $instance */
+    $instance = $component->instance();
+    /** @var City $activeModel */
+    $activeModel = $instance->getActiveModel();
 
     expect($activeModel)->toBeInstanceOf(City::class)
         ->and($activeModel->id)->toBe($city->id)
         ->and($activeModel->name)->toBe('Updated City');
 
     // Root model should still be accessible
-    expect($component->instance()->getModel()->id)->toBe($country->id);
+    /** @var FlexibleTestComponent $instance */
+    $instance = $component->instance();
+    /** @var Country $rootModel */
+    $rootModel = $instance->getModel();
+    expect($rootModel->id)->toBe($country->id);
 });
 
 it('correctly identifies when a record is being edited via isEdited()', function () {
@@ -63,19 +73,26 @@ it('correctly identifies when a record is being edited via isEdited()', function
         ],
     ]);
 
+    /** @var FlexibleTestComponent $instance */
+    $instance = $test->instance();
+
     // Test root model
-    expect($test->instance()->isEdited('', $country->id))->toBeTrue();
-    expect($test->instance()->isEdited('', 999))->toBeFalse();
-    expect($test->instance()->isEdited('cities', $city->id))->toBeFalse();
+    expect($instance->isEdited('', $country->id))->toBeTrue();
+    expect($instance->isEdited('', 999))->toBeFalse();
+    expect($instance->isEdited('cities', $city->id))->toBeFalse();
 
     // Test relation model
     $test->call('edit', 'cities', $city->id);
-    expect($test->instance()->isEdited('cities', $city->id))->toBeTrue();
-    expect($test->instance()->isEdited('', $country->id))->toBeFalse();
-    expect($test->instance()->isEdited('cities', 999))->toBeFalse();
+    /** @var FlexibleTestComponent $instance */
+    $instance = $test->instance();
+    expect($instance->isEdited('cities', $city->id))->toBeTrue();
+    expect($instance->isEdited('', $country->id))->toBeFalse();
+    expect($instance->isEdited('cities', 999))->toBeFalse();
 
     // Test after cancel
     $test->call('cancel');
-    expect($test->instance()->isEdited('', $country->id))->toBeTrue();
-    expect($test->instance()->isEdited('cities', $city->id))->toBeFalse();
+    /** @var FlexibleTestComponent $instance */
+    $instance = $test->instance();
+    expect($instance->isEdited('', $country->id))->toBeTrue();
+    expect($instance->isEdited('cities', $city->id))->toBeFalse();
 });

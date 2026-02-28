@@ -16,9 +16,22 @@ class HasAutoFormScanRulesTest extends TestCase
         {
             use HasAutoForm;
 
+            private array $testRuleKeys = [];
+
             public function __construct(private Model $model)
             {
                 $this->form = new FormCollection;
+                $this->form->rootModelClass = get_class($model);
+            }
+
+            public function ruleKeys(): array
+            {
+                return $this->testRuleKeys;
+            }
+
+            public function setTestRuleKeys(array $keys): void
+            {
+                $this->testRuleKeys = $keys;
             }
 
             public function getActiveModel(): ?Model
@@ -27,9 +40,9 @@ class HasAutoFormScanRulesTest extends TestCase
             }
 
             // Public wrapper for testing
-            public function callScanInheritedRules(array $ruleKeys, array $rules = []): array
+            public function callScanInheritedRules(array $rules = []): array
             {
-                return $this->scanInheritedRules($ruleKeys, $rules);
+                return $this->scanInheritedRules($rules);
             }
 
             public function resolveModelInstance(string $context, int|string|null $id): ?Model
@@ -38,6 +51,7 @@ class HasAutoFormScanRulesTest extends TestCase
                 if ($context === 'relation') {
                     return new class extends Model
                     {
+                        /** @return array<string, mixed> */
                         public function rules(): array
                         {
                             return ['field' => 'required|string'];
@@ -54,6 +68,7 @@ class HasAutoFormScanRulesTest extends TestCase
     {
         $model = new class extends Model
         {
+            /** @return array<string, mixed> */
             public function rules(): array
             {
                 return ['name' => 'required'];
@@ -61,15 +76,17 @@ class HasAutoFormScanRulesTest extends TestCase
         };
 
         $component = $this->getTestComponent($model);
-        $rules = $component->callScanInheritedRules(['name']);
+        $component->setTestRuleKeys(['name']);
+        $rules = $component->callScanInheritedRules();
 
-        $this->assertEquals(['name' => 'required'], $rules);
+        $this->assertEquals(['name' => 'sometimes|required'], $rules);
     }
 
     public function test_scan_inherited_rules_resolves_relation_fields()
     {
         $model = new class extends Model
         {
+            /** @return array<string, mixed> */
             public function rules(): array
             {
                 return [];
@@ -77,15 +94,17 @@ class HasAutoFormScanRulesTest extends TestCase
         };
 
         $component = $this->getTestComponent($model);
-        $rules = $component->callScanInheritedRules(['relation.field']);
+        $component->setTestRuleKeys(['relation.field']);
+        $rules = $component->callScanInheritedRules();
 
-        $this->assertEquals(['relation.field' => 'required|string'], $rules);
+        $this->assertEquals(['relation.field' => 'sometimes|required|string'], $rules);
     }
 
     public function test_scan_inherited_rules_respects_overrides()
     {
         $model = new class extends Model
         {
+            /** @return array<string, mixed> */
             public function rules(): array
             {
                 return ['name' => 'required'];
@@ -93,7 +112,8 @@ class HasAutoFormScanRulesTest extends TestCase
         };
 
         $component = $this->getTestComponent($model);
-        $rules = $component->callScanInheritedRules(['name'], ['name' => 'nullable']);
+        $component->setTestRuleKeys(['name']);
+        $rules = $component->callScanInheritedRules(['name' => 'nullable']);
 
         $this->assertEquals(['name' => 'nullable'], $rules);
     }
@@ -102,6 +122,7 @@ class HasAutoFormScanRulesTest extends TestCase
     {
         $model = new class extends Model
         {
+            /** @return array<string, mixed> */
             public function rules(): array
             {
                 return [];
@@ -109,16 +130,18 @@ class HasAutoFormScanRulesTest extends TestCase
         };
 
         $component = $this->getTestComponent($model);
+        $component->setTestRuleKeys(['unknown']);
 
         $this->expectException(LivewireAutoFormException::class);
         $this->expectExceptionMessage("Rule key 'unknown' could not be resolved");
-        $component->callScanInheritedRules(['unknown']);
+        $component->callScanInheritedRules();
     }
 
     public function test_scan_inherited_rules_throws_on_unknown_relation()
     {
         $model = new class extends Model
         {
+            /** @return array<string, mixed> */
             public function rules(): array
             {
                 return [];
@@ -126,16 +149,18 @@ class HasAutoFormScanRulesTest extends TestCase
         };
 
         $component = $this->getTestComponent($model);
+        $component->setTestRuleKeys(['unknown.field']);
 
         $this->expectException(LivewireAutoFormException::class);
-        $this->expectExceptionMessage('Relation [unknown] does not exist');
-        $component->callScanInheritedRules(['unknown.field']);
+        $this->expectExceptionMessage("Rule key 'unknown.field' could not be resolved");
+        $component->callScanInheritedRules();
     }
 
     public function test_scan_inherited_rules_throws_on_unknown_relation_field()
     {
         $model = new class extends Model
         {
+            /** @return array<string, mixed> */
             public function rules(): array
             {
                 return [];
@@ -143,10 +168,11 @@ class HasAutoFormScanRulesTest extends TestCase
         };
 
         $component = $this->getTestComponent($model);
+        $component->setTestRuleKeys(['relation.unknown']);
 
         $this->expectException(LivewireAutoFormException::class);
-        $this->expectExceptionMessage("Rule key 'unknown' could not be resolved");
-        $component->callScanInheritedRules(['relation.unknown']);
+        $this->expectExceptionMessage("Rule key 'relation.unknown' could not be resolved");
+        $component->callScanInheritedRules();
     }
 
     public function test_scan_inherited_rules_returns_provided_rules_if_no_active_model()
@@ -165,13 +191,13 @@ class HasAutoFormScanRulesTest extends TestCase
                 return null;
             }
 
-            public function callScanInheritedRules(array $ruleKeys, array $rules = []): array
+            public function callScanInheritedRules(array $rules = []): array
             {
-                return $this->scanInheritedRules($ruleKeys, $rules);
+                return $this->scanInheritedRules($rules);
             }
         };
 
-        $rules = $component->callScanInheritedRules(['any'], ['existing' => 'rule']);
+        $rules = $component->callScanInheritedRules(['existing' => 'rule']);
         $this->assertEquals(['existing' => 'rule'], $rules);
     }
 }

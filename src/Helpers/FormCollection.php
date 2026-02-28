@@ -29,15 +29,16 @@ use Traversable;
  * can be seamlessly serialized and de-serialized between Livewire server-side
  * and client-side, preserving complex nested state across requests.
  *
+ * @implements ArrayAccess<string, mixed>
+ * @implements IteratorAggregate<string, mixed>
+ *
  * @property string $activeContext
  * @property int|string|null $activeId
  * @property string|null $rootModelClass
  * @property int|string|null $rootModelId
  * @property array<int, string> $nullables
  * @property bool $autoSave
- *
- * @implements ArrayAccess<string, mixed>
- * @implements IteratorAggregate<string, mixed>
+ * @property array<string, mixed> $__system
  */
 class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wireable
 {
@@ -241,7 +242,7 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
     /**
      * @throws LivewireAutoFormException
      */
-    public function __set(string $key, mixed $value)
+    public function __set(string $key, mixed $value): void
     {
         if ($key === self::SYSTEM_KEY) {
             throw LivewireAutoFormException::forbiddenKey($key, self::class);
@@ -296,6 +297,10 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
 
     public function setNested(string $key, mixed $value): void
     {
+        if (str_starts_with($key, self::SYSTEM_KEY.'.')) {
+            throw LivewireAutoFormException::forbiddenKey($key, self::class);
+        }
+
         if (! str_contains($key, '.')) {
             $this->__set($key, $value);
 

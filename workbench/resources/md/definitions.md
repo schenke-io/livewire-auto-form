@@ -18,7 +18,7 @@ class MyComponent extends AutoForm
 
     public function rules(): array
     {
-        return $this->scanInheritedRules($this->ruleKeys());
+        return $this->scanInheritedRules();
     }
 
     public function ruleKeys(): array
@@ -128,11 +128,10 @@ Returns the model instance for the current active context (root or relation) wit
 ### `ruleKeys()`
 Defines which model fields are included in the form and should have their validation rules inherited. Returns an array of strings (e.g., `['name', 'posts.title']`).
 
-### `scanInheritedRules(array $ruleKeys, array $rules = [])`
+### `scanInheritedRules(array $rules = [])`
 Scans for rules from the active model and its relationships. This is used by the default `rules()` implementation to avoid duplicating validation rules already defined in your Eloquent models.
 
-- `$ruleKeys`: Array of field names (e.g., `['name', 'posts.title']`) to scan for.
-- `$rules`: Optional starting array of rules (component rules take precedence).
+- `$rules`: Optional starting array of rules (component rules take precedence). The method automatically uses the keys returned by `ruleKeys()`.
 
 Returns the merged rules array.
 

@@ -3,7 +3,7 @@
 use Workbench\App\Models\User;
 
 it('tests the complete user wizard flow', function () {
-    $this->visit('/wizard')
+    visit('/wizard')
         ->waitForText('User Profile Wizard')
         // Step 1: Account
         ->type("[dusk='name']", 'John Doe')
@@ -25,6 +25,7 @@ it('tests the complete user wizard flow', function () {
         ->press('Save Changes')
         ->waitForText('Saved successfully');
 
+    /** @var \Tests\TestCase $this */
     $this->assertDatabaseHas('users', [
         'name' => 'John Doe',
         'email' => 'john@example.com',
@@ -39,7 +40,7 @@ it('tests the complete user wizard flow', function () {
 it('prevents moving forward with invalid data', function () {
     User::factory()->create(['email' => 'duplicate@example.com']);
 
-    $this->visit('/wizard')
+    visit('/wizard')
         ->type("[dusk='name']", 'John Doe')
         ->type("[dusk='email']", 'duplicate@example.com')
         ->press('Next Step')
@@ -48,7 +49,7 @@ it('prevents moving forward with invalid data', function () {
 });
 
 it('tests the back button and data persistence', function () {
-    $this->visit('/wizard')
+    visit('/wizard')
         ->type("[dusk='name']", 'Initial Name')
         ->type("[dusk='email']", 'initial@example.com')
         ->press('Next Step')

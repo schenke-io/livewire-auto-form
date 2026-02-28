@@ -47,5 +47,6 @@ it('saveRootModel does not call JSON field as relation', function () {
     // and we passed $mockUser (the mock), the changes should be reflected on it or persisted.
 
     $user->refresh();
+    /** @var User $user */
     expect($user->name)->toBe('New Name');
 });

@@ -78,13 +78,28 @@ class CrudProcessor
 
         foreach ($allData as $key => $value) {
             $key = (string) $key;
-            if ($root->isRelation($key)) {
+            $realKey = $key;
+            if (str_contains($key, '.')) {
+                $parts = explode('.', $key);
+                $firstPart = $parts[0];
+                if ($root->isRelation($firstPart)) {
+                    continue;
+                }
+                if ($root->isFillable($firstPart) || array_key_exists($firstPart, $root->getCasts())) {
+                    $realKey = str_replace('.', '->', $key);
+                } else {
+                    continue;
+                }
+            } elseif ($root->isRelation($key)) {
                 if (is_array($value)) {
                     $relationsData[$key] = $value;
                 }
-            } elseif (! str_contains($key, '.') && ! property_exists($this->state, $key) && $root->isFillable($key)) {
-                $rootData[$key] = $this->processor->sanitizeValue($key, $value, $this->state->getNullables());
+
+                continue;
+            } elseif (property_exists($this->state, $key) || ! $root->isFillable($key)) {
+                continue;
             }
+            $rootData[$realKey] = $this->processor->sanitizeValue($key, $value, $this->state->getNullables());
         }
 
         // 1. Handle BelongsTo updates from relations form
@@ -244,6 +259,13 @@ class CrudProcessor
             // fall through to standard field update
         }
 
+        if (str_contains($realKey, '.')) {
+            $parts = explode('.', $realKey);
+            $firstPart = $parts[0];
+            if ($model->isFillable($firstPart) || array_key_exists($firstPart, $model->getCasts())) {
+                $realKey = str_replace('.', '->', $realKey);
+            }
+        }
         $model->forceFill([$realKey => $cleanValue])->save();
         $model->refresh();
 

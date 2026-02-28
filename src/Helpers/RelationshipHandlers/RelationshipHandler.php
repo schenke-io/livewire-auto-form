@@ -8,6 +8,19 @@ use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 
 /**
  * Interface for handling relationship-specific persistence logic.
+ *
+ * This interface defines the contract for dedicated relationship handlers, which
+ * abstract away the complexity of managing different Eloquent relationship types
+ * (e.g. BelongsTo, HasMany, BelongsToMany) during the CRUD operations.
+ *
+ * Each implementation is responsible for:
+ * - Persisting full datasets for the relationship (Save).
+ * - Handling individual, context-aware field updates (UpdateField).
+ * - Correctly removing or dissociating related records (Delete).
+ *
+ * Architecture:
+ * The `CrudProcessor` uses these handlers to provide a uniform API for model
+ * persistence regardless of the underlying Eloquent relationship type.
  */
 interface RelationshipHandler
 {

@@ -11,6 +11,7 @@ it('clears form when root model not found in loadContext', function () {
     $state = new FormCollection;
     $state->put('name', 'Old Name');
 
+    /** @var \Mockery\MockInterface&\SchenkeIo\LivewireAutoForm\Helpers\ModelResolver $resolver */
     $resolver = \Mockery::mock(ModelResolver::class);
     $resolver->shouldReceive('resolve')->andReturn(null);
 
@@ -25,6 +26,7 @@ it('forgets relation form when related model not found in loadContext', function
     $state = new FormCollection;
     $state->put('cities', ['name' => 'Old City']);
 
+    /** @var \Mockery\MockInterface&\SchenkeIo\LivewireAutoForm\Helpers\ModelResolver $resolver */
     $resolver = \Mockery::mock(ModelResolver::class);
     $resolver->shouldReceive('resolve')->andReturn(null);
 
@@ -40,6 +42,7 @@ it('preserves existing relation data when reloading root context', function () {
     $state->put('country', ['name' => 'Existing Country']);
 
     $city = \Workbench\App\Models\City::factory()->create();
+    /** @var \Mockery\MockInterface&\SchenkeIo\LivewireAutoForm\Helpers\ModelResolver $resolver */
     $resolver = \Mockery::mock(ModelResolver::class);
     $resolver->shouldReceive('resolve')->andReturn($city);
 

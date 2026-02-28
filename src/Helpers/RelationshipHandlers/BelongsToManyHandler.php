@@ -10,6 +10,17 @@ use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 
 /**
  * Handler for BelongsToMany relationships.
+ *
+ * This implementation handles the persistence of Many-to-Many relationships,
+ * including synchronization and pivot data management. It provides:
+ * - **Pivot Management**: Automatically extracting and persisting pivot data
+ *   (e.g., using `updateExistingPivot`).
+ * - **Context-Aware Pivot Updates**: Handling individual field updates for
+ *   pivot attributes when designated in the rule set.
+ * - **Dynamic Attachment/Creation**: Intelligently deciding between attaching
+ *   an existing record or creating a new related model.
+ * - **Detachment Logic**: Correctly detaching records rather than deleting
+ *   the target model during deletion operations.
  */
 class BelongsToManyHandler implements RelationshipHandler
 {

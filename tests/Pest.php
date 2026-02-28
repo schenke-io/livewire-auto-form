@@ -13,12 +13,10 @@ use Tests\TestCase;
 |
 */
 
-pest()->extend(TestCase::class)
-    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+uses(TestCase::class, Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature', 'Unit/Traits');
 
-pest()->extend(TestCase::class)
-    ->use(Orchestra\Testbench\Concerns\WithWorkbench::class)
+uses(TestCase::class, Orchestra\Testbench\Concerns\WithWorkbench::class)
     ->in('Browser');
 
 /*

@@ -65,7 +65,9 @@ class ModelResolver
             foreach ($state->all() as $k => $v) {
                 $stringKey = (string) $k;
                 if (! is_array($v) && $root->isFillable($stringKey)) {
-                    $root->setAttribute($stringKey, $v);
+                    if ($root->getAttribute($stringKey) !== $v) {
+                        $root->setAttribute($stringKey, $v);
+                    }
                 }
             }
         }
@@ -114,8 +116,7 @@ class ModelResolver
 
             return $result instanceof Model ? $result : null;
         } catch (\BadMethodCallException $e) {
-            $className = $root instanceof Model ? get_class($root) : 'unknown';
-            throw LivewireAutoFormException::relationDoesNotExist($context, $className, self::class);
+            return null;
         }
     }
 }

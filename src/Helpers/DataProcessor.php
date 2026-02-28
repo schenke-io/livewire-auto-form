@@ -92,6 +92,12 @@ class DataProcessor
                 // 1. Simple fields: "name"
                 // 2. Nested relationship fields: "cities.name"
                 // 3. Pivot fields: "pivot.status"
+                if (str_contains($ruleKey, '.')) {
+                    $parts = explode('.', $ruleKey);
+                    if ($model && $model->isRelation($parts[0])) {
+                        continue;
+                    }
+                }
                 $allowedFields[] = $ruleKey;
             } else {
                 if (str_starts_with($ruleKey, "$context.")) {

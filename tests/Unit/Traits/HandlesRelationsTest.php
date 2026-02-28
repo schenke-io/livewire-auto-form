@@ -25,20 +25,32 @@ class HandlesRelationsTest extends TestCase
                 $this->form = new FormCollection;
             }
 
+            /**
+             * @return array<string, mixed>
+             */
             public function rules(): array
             {
                 return ['rel.field' => 'required'];
             }
 
-            public function guardDirtyBuffer() {}
+            public function guardDirtyBuffer(): void {}
 
-            public function loadContext($relation, $id) {}
+            /**
+             * @param  string  $relation
+             * @param  mixed  $id
+             */
+            public function loadContext($relation, $id): void {}
 
-            public function getCrudProcessor()
+            public function getCrudProcessor(): object
             {
                 return new class
                 {
-                    public function getRelationList($rel, $rules)
+                    /**
+                     * @param  string  $rel
+                     * @param  array<string, mixed>  $rules
+                     * @return Collection<int, string>
+                     */
+                    public function getRelationList($rel, $rules): Collection
                     {
                         return new Collection(['item']);
                     }
@@ -47,7 +59,7 @@ class HandlesRelationsTest extends TestCase
         };
     }
 
-    public function test_set_context()
+    public function test_set_context(): void
     {
         // Lines 96-98
         $this->testClass->setContext('new_context', 123);
@@ -57,19 +69,19 @@ class HandlesRelationsTest extends TestCase
         $this->assertEquals(123, $this->testClass->form->activeId);
     }
 
-    public function test_is_relation_allowed_with_empty_relation()
+    public function test_is_relation_allowed_with_empty_relation(): void
     {
         // Line 110
         $this->assertFalse($this->testClass->isRelationAllowed(''));
     }
 
-    public function test_is_relation_allowed_with_disallowed_relation()
+    public function test_is_relation_allowed_with_disallowed_relation(): void
     {
         // Line 120
         $this->assertFalse($this->testClass->isRelationAllowed('other_rel'));
     }
 
-    public function test_ensure_relation_allowed_throws_exception()
+    public function test_ensure_relation_allowed_throws_exception(): void
     {
         // Line 131
         $this->expectException(LivewireAutoFormException::class);
@@ -77,7 +89,7 @@ class HandlesRelationsTest extends TestCase
         $this->testClass->ensureRelationAllowed('disallowed');
     }
 
-    public function test_get_relation_list()
+    public function test_get_relation_list(): void
     {
         // Lines 155-157
         $list = $this->testClass->getRelationList('rel');

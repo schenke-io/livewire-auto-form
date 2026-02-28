@@ -7,6 +7,10 @@ use Orchestra\Testbench\TestCase as BaseTestCase;
 use SchenkeIo\LivewireAutoForm\LivewireAutoFormServiceProvider;
 use Workbench\App\Providers\WorkbenchServiceProvider;
 
+/**
+ * @method \Pest\Browser\Api\PendingAwaitablePage|\Pest\Browser\Api\ArrayablePendingAwaitablePage visit(string|array $url, array $options = [])
+ * @method void assertDatabaseHas(string $table, array $data, ?string $connection = null)
+ */
 abstract class TestCase extends BaseTestCase
 {
     /** {@inheritDoc} */

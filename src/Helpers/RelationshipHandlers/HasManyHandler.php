@@ -10,6 +10,16 @@ use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 
 /**
  * Handler for HasMany and MorphMany relationships.
+ *
+ * This implementation provides persistence logic for relationships where the
+ * target model contains the foreign key. It is responsible for:
+ * - **Dynamic Record Creation**: Creating new related model instances.
+ * - **Targeted Updates**: Applying changes to specific related records by ID.
+ * - **Child Deletion**: Executing standard Eloquent delete operations on
+ *   associated records when requested.
+ *
+ * It provides a uniform interface for both standard One-to-Many and
+ * Polymorphic relationships.
  */
 class HasManyHandler implements RelationshipHandler
 {

@@ -14,6 +14,9 @@ use SchenkeIo\LivewireAutoForm\Helpers\ModelResolver;
 /**
  * HasAutoForm is the core engine that powers the Livewire Auto Form package.
  *
+ * @method void resetErrorBag(string $key = null)
+ * @method mixed dispatch(string $event, ...$params)
+ *
  * This trait is designed to be used within Livewire Components (like `AutoForm` and `AutoWizardForm`).
  * It manages the complex interplay between Eloquent models, their relationships, and the
  * Livewire component state by providing a centralized form buffer (`FormCollection`).
@@ -79,7 +82,7 @@ trait HasAutoForm
      */
     public function rules(): array
     {
-        return $this->scanInheritedRules($this->ruleKeys());
+        return $this->scanInheritedRules();
     }
 
     /**
@@ -257,7 +260,7 @@ trait HasAutoForm
                 return;
             }
 
-            if (! array_key_exists((string) $key, $this->rules())) {
+            if (! array_key_exists((string) $key, $this->rules()) && ! $this->isRelationAllowed((string) $key)) {
                 throw LivewireAutoFormException::fieldKeyNotDefinedInRules((string) $key, static::class);
             }
 
@@ -266,6 +269,7 @@ trait HasAutoForm
             $this->form->setNested($key, $result['cleanValue']);
 
             if ($result['saved']) {
+                session()->flash('status', 'Saved successfully');
                 $this->validateOnly($key);
 
                 $this->getComponent()->dispatch('field-updated',
@@ -372,20 +376,20 @@ trait HasAutoForm
     /**
      * Scans for rules from the active model and its relationships.
      *
-     * @param  string[]  $ruleKeys
      * @param  array<string, mixed>  $rules  Initial rules where component overrides may be provided.
      * @return array<string, mixed>
      *
      * @throws LivewireAutoFormException
      */
-    protected function scanInheritedRules(array $ruleKeys, array $rules = []): array
+    protected function scanInheritedRules(array $rules = []): array
     {
-        if ($ruleKeys === []) {
+        $ruleKeys = $this->ruleKeys();
+        if ($ruleKeys === [] || empty($this->form->rootModelClass)) {
             return $rules;
         }
 
-        $activeModel = $this->getActiveModel();
-        if (! $activeModel) {
+        $rootModel = $this->getModel();
+        if (! $rootModel) {
             return $rules;
         }
 
@@ -394,36 +398,78 @@ trait HasAutoForm
                 continue;
             }
 
-            if (! str_contains($key, '.')) {
-                // simple key on an active model
-                $modelRules = $this->getRulesFromModel($activeModel);
-                if (isset($modelRules[$key])) {
-                    $rules[$key] = $modelRules[$key];
-                } else {
-                    throw LivewireAutoFormException::ruleKeyNotFound($key, get_class($activeModel), static::class);
-                }
-            } else {
-                // dot notation
+            // 1. Prioritize direct rule matching on the root model
+            $rootModelRules = $this->getRulesFromModel($rootModel);
+            if (array_key_exists($key, $rootModelRules)) {
+                $rules[$key] = $this->ensureSometimesRule($rootModelRules[$key]);
+
+                continue;
+            }
+
+            if ($key === 'id') {
+                // to allow for creating a new record
+                $rules[$key] = 'nullable';
+
+                continue;
+            }
+
+            if (str_contains($key, '.')) {
+                // 2. Implement longest-prefix relationship resolution
                 $parts = explode('.', $key);
-                $fieldName = array_pop($parts);
-                $relationPath = implode('.', $parts);
+                $found = false;
 
-                // resolve the related model
-                $relatedModel = $this->resolveModelInstance($relationPath, null);
-                if (! $relatedModel) {
-                    throw LivewireAutoFormException::relationDoesNotExist($relationPath, get_class($activeModel), static::class);
+                // Iterate through the dotted parts to find the longest prefix that resolves to a valid relationship
+                for ($i = count($parts) - 1; $i > 0; $i--) {
+                    $relationPath = implode('.', array_slice($parts, 0, $i));
+                    $fieldName = implode('.', array_slice($parts, $i));
+
+                    // try to resolve the related model
+                    $relatedModel = $this->resolveModelInstance($relationPath, null);
+                    if ($relatedModel) {
+                        $modelRules = $this->getRulesFromModel($relatedModel);
+                        if (array_key_exists($fieldName, $modelRules)) {
+                            $rules[$key] = $this->ensureSometimesRule($modelRules[$fieldName]);
+                            $found = true;
+
+                            break;
+                        }
+                        if ($fieldName === 'id') {
+                            $rules[$key] = 'nullable';
+                            $found = true;
+
+                            break;
+                        }
+                    }
                 }
 
-                $modelRules = $this->getRulesFromModel($relatedModel);
-                if (isset($modelRules[$fieldName])) {
-                    $rules[$key] = $modelRules[$fieldName];
-                } else {
-                    throw LivewireAutoFormException::ruleKeyNotFound($fieldName, get_class($relatedModel), static::class);
+                if ($found) {
+                    continue;
                 }
             }
+
+            throw LivewireAutoFormException::ruleKeyNotFound($key, get_class($rootModel), static::class);
         }
 
         return $rules;
+    }
+
+    /**
+     * @param  string|array<int, string>  $rule
+     * @return string|array<int, string>
+     */
+    private function ensureSometimesRule(string|array $rule): string|array
+    {
+        if (is_string($rule)) {
+            if (! str_contains($rule, 'sometimes')) {
+                return 'sometimes|'.$rule;
+            }
+        } elseif (is_array($rule)) {
+            if (! in_array('sometimes', $rule)) {
+                array_unshift($rule, 'sometimes');
+            }
+        }
+
+        return $rule;
     }
 
     /**

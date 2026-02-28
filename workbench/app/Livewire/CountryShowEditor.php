@@ -30,16 +30,34 @@ class CountryShowEditor extends Component
         $this->initializeHasAutoForm();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
+        return $this->scanInheritedRules();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function ruleKeys(): array
+    {
         return [
-            'name' => 'nullable|string|max:255',
-            'code' => 'nullable|string|max:10',
-            'cities.name' => 'nullable|string|max:255',
-            'cities.population' => 'nullable|integer',
-            'borders.id' => 'nullable|integer',
-            'borders.name' => 'nullable|string|max:255',
-            'borders.pivot.border_length_km' => 'nullable|integer',
+            'name',
+            'code',
+            'cities.id',
+            'cities.name',
+            'cities.population',
+            'cities.status',
+            'cities.is_capital',
+            'cities.geo.latitude',
+            'cities.geo.longitude',
+            'cities.geo.diameter',
+            'cities.geo.height',
+            'borders.id',
+            'borders.name',
+            'borders.pivot.border_length_km',
         ];
     }
 
@@ -50,6 +68,13 @@ class CountryShowEditor extends Component
     {
         $this->autoSave = false;
         $this->setModel($country);
+    }
+
+    public function save(): void
+    {
+        $this->validate();
+        $this->getCrudProcessor()->save($this->form->all());
+        session()->flash('status', 'Saved successfully');
     }
 
     public function render(): \Illuminate\Contracts\View\View|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\Support\Htmlable

@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('code', 3)->index();
+            $table->json('geo')->nullable();
             $table->timestamps();
         });
     }

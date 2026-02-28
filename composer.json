@@ -43,7 +43,7 @@
         "spatie/laravel-ray": "^1.40",
         "barryvdh/laravel-ide-helper": "^3.5",
         "phpstan/phpstan-phpunit": "^2.0",
-        "pestphp/pest-plugin-browser": "^4.0",
+        "pestphp/pest-plugin-browser": "^4.3",
         "ext-pcntl": "*"
     },
     "extra": {

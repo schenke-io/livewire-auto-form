@@ -8,6 +8,13 @@ use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
 /**
  * Handles relationship management logic for the form.
  *
+ * @method void cancel()
+ * @method mixed getComponent()
+ * @method void guardDirtyBuffer()
+ * @method \SchenkeIo\LivewireAutoForm\Helpers\CrudProcessor getCrudProcessor()
+ * @method array<string, mixed> rules()
+ * @method void loadContext(string $relation, int|string|null $id, bool $preserve = true, ?\Illuminate\Database\Eloquent\Model $model = null)
+ *
  * This trait provides the functionality to navigate and manipulate Eloquent
  * relationships within the form. It allows the component to switch between
  * editing the main (root) model and any of its defined relationships (like

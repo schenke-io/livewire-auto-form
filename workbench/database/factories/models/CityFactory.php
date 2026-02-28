@@ -19,6 +19,12 @@ class CityFactory extends Factory
             'name' => $this->faker->city(),
             'population' => $this->faker->numberBetween(10_000, 5_000_000),
             'background' => $this->faker->sentence(),
+            'is_capital' => $this->faker->boolean(),
+            'status' => \Workbench\App\Enums\CityStatus::Active,
+            'geo' => [
+                'latitude' => $this->faker->latitude(),
+                'longitude' => $this->faker->longitude(),
+            ],
             'country_id' => Country::factory(),
         ];
     }

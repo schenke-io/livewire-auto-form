@@ -10,6 +10,7 @@
 
     <!-- FluxUI styling system -->
     @fluxAppearance
+    @livewireStyles
 
 
     <style>
@@ -119,5 +120,6 @@
     </div>
 </noscript>
     @fluxScripts
+    @livewireScripts
 </body>
 </html>

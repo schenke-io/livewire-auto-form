@@ -118,7 +118,7 @@ abstract class AutoWizardForm extends BaseAutoForm
      * filtered rules based on the current step's fields.
      *
      * Tip: If your Eloquent models expose `rules()`, you can leverage
-     * `scanInheritedRules([...])` in your component's `rules()` implementation
+     * `scanInheritedRules()` in your component's `rules()` implementation
      * to avoid duplicating validation logic across steps.
      */
     public function next(): void

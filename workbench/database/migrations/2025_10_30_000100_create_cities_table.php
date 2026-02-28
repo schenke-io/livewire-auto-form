@@ -15,6 +15,7 @@ return new class extends Migration
             $table->unsignedInteger('population')->nullable();
             $table->boolean('is_capital')->default(false);
             $table->string('status')->default('active');
+            $table->json('geo')->nullable();
             $table->foreignId('country_id')->constrained('countries')->cascadeOnDelete();
             $table->timestamps();
         });
