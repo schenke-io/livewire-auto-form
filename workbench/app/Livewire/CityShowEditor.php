@@ -3,6 +3,7 @@
 namespace Workbench\App\Livewire;
 
 use Livewire\Component;
+use SchenkeIo\LivewireAutoForm\Traits\HasAutoForm;
 use Workbench\App\Livewire\Traits\EditorHelper;
 use Workbench\App\Models\City;
 
@@ -22,7 +23,7 @@ use Workbench\App\Models\City;
 class CityShowEditor extends Component
 {
     use EditorHelper;
-    use \SchenkeIo\LivewireAutoForm\Traits\HasAutoForm;
+    use HasAutoForm;
 
     public int $counter = 0;
 

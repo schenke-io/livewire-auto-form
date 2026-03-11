@@ -2,11 +2,14 @@
 
 namespace Tests\Unit\Traits;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
+use SchenkeIo\LivewireAutoForm\Helpers\CrudProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
 use SchenkeIo\LivewireAutoForm\Traits\HasAutoForm;
 use Tests\TestCase;
+use Workbench\App\Models\City;
 
 class HasAutoFormTest extends TestCase
 {
@@ -51,7 +54,7 @@ class HasAutoFormTest extends TestCase
 
     public function test_get_inherited_rules_returns_component_rules_when_model_has_no_rules()
     {
-        $model = new class extends \Illuminate\Database\Eloquent\Model
+        $model = new class extends Model
         {
             protected $guarded = [];
 
@@ -89,7 +92,7 @@ class HasAutoFormTest extends TestCase
                 return $this->scanInheritedRules(['name' => 'required']);
             }
 
-            public function getActiveModel(): ?\Illuminate\Database\Eloquent\Model
+            public function getActiveModel(): ?Model
             {
                 return $this->model;
             }
@@ -101,7 +104,7 @@ class HasAutoFormTest extends TestCase
 
     public function test_get_inherited_rules_merges_and_filters()
     {
-        $model = new class extends \Illuminate\Database\Eloquent\Model
+        $model = new class extends Model
         {
             protected $guarded = [];
 
@@ -149,7 +152,7 @@ class HasAutoFormTest extends TestCase
                 ]);
             }
 
-            public function getActiveModel(): ?\Illuminate\Database\Eloquent\Model
+            public function getActiveModel(): ?Model
             {
                 return $this->model;
             }
@@ -262,7 +265,7 @@ class HasAutoFormTest extends TestCase
 
     public function test_save_calls_crud_processor()
     {
-        $mockProcessor = $this->createMock(\SchenkeIo\LivewireAutoForm\Helpers\CrudProcessor::class);
+        $mockProcessor = $this->createMock(CrudProcessor::class);
         $mockProcessor->expects($this->once())->method('save');
 
         $this->testClass = new class($mockProcessor) implements \ArrayAccess
@@ -290,7 +293,7 @@ class HasAutoFormTest extends TestCase
 
             public function resetErrorBag($key = null) {}
 
-            protected function getCrudProcessor(): \SchenkeIo\LivewireAutoForm\Helpers\CrudProcessor
+            protected function getCrudProcessor(): CrudProcessor
             {
                 return $this->processor;
             }
@@ -358,7 +361,7 @@ class HasAutoFormTest extends TestCase
 
     public function test_trait_updated_dispatches_event_when_saved()
     {
-        $mockProcessor = $this->createMock(\SchenkeIo\LivewireAutoForm\Helpers\CrudProcessor::class);
+        $mockProcessor = $this->createMock(CrudProcessor::class);
         $mockProcessor->expects($this->once())
             ->method('updatedForm')
             ->willReturn(['saved' => true, 'cleanValue' => 'John', 'context' => 'root', 'id' => 1]);
@@ -390,7 +393,7 @@ class HasAutoFormTest extends TestCase
                 return 'form';
             }
 
-            protected function getCrudProcessor(): \SchenkeIo\LivewireAutoForm\Helpers\CrudProcessor
+            protected function getCrudProcessor(): CrudProcessor
             {
                 return $this->processor;
             }
@@ -414,9 +417,9 @@ class HasAutoFormTest extends TestCase
 
     public function test_resolve_model_instance()
     {
-        $this->testClass->form->rootModelClass = \Workbench\App\Models\City::class;
+        $this->testClass->form->rootModelClass = City::class;
         $result = $this->testClass->resolveModelInstance('', null);
         $this->assertNotNull($result);
-        $this->assertInstanceOf(\Workbench\App\Models\City::class, $result);
+        $this->assertInstanceOf(City::class, $result);
     }
 }

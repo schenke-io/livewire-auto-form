@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Livewire\Components\Models;
 
-class ModelWithException extends \Illuminate\Database\Eloquent\Model
+use Illuminate\Database\Eloquent\Model;
+
+class ModelWithException extends Model
 {
     /**
      * @return array<string, string>

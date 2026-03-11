@@ -1,6 +1,7 @@
 <?php
 
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
+use Workbench\App\Models\Country;
 
 it('manages root model class and id', function () {
     $state = new FormCollection([]);
@@ -8,9 +9,9 @@ it('manages root model class and id', function () {
     expect($state->getRootModelClass())->toBeNull();
     expect($state->getRootModelId())->toBeNull();
 
-    $state->setRootModel(\Workbench\App\Models\Country::class, 42);
+    $state->setRootModel(Country::class, 42);
 
-    expect($state->getRootModelClass())->toBe(\Workbench\App\Models\Country::class);
+    expect($state->getRootModelClass())->toBe(Country::class);
     expect($state->getRootModelId())->toBe(42);
 });
 

@@ -2,11 +2,17 @@
 
 namespace Workbench\App\Providers;
 
+use Flux\FluxServiceProvider;
 use Illuminate\Foundation\Vite;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Livewire\Component;
+use Livewire\Livewire;
+use Livewire\LivewireManager;
+use Livewire\LivewireServiceProvider;
+use Symfony\Component\Finder\Finder;
 use Workbench\App\Console\Commands\WriteMarkdownCommand;
 
 class WorkbenchServiceProvider extends ServiceProvider
@@ -84,34 +90,34 @@ class WorkbenchServiceProvider extends ServiceProvider
     protected function bootLivewireComponents(): void
     {
         // If Livewire isn't installed, quietly skip.
-        if (! class_exists(\Livewire\LivewireManager::class) && ! class_exists(\Livewire\Livewire::class)) {
+        if (! class_exists(LivewireManager::class) && ! class_exists(Livewire::class)) {
             return;
         }
 
         // Make sure the Livewire service provider is registered (useful during tests when provider list is overridden).
         try {
-            if (! $this->app->providerIsLoaded(\Livewire\LivewireServiceProvider::class)) {
-                $this->app->register(\Livewire\LivewireServiceProvider::class);
+            if (! $this->app->providerIsLoaded(LivewireServiceProvider::class)) {
+                $this->app->register(LivewireServiceProvider::class);
             }
-            if (class_exists(\Flux\FluxServiceProvider::class) && ! $this->app->providerIsLoaded(\Flux\FluxServiceProvider::class)) {
-                $this->app->register(\Flux\FluxServiceProvider::class);
+            if (class_exists(FluxServiceProvider::class) && ! $this->app->providerIsLoaded(FluxServiceProvider::class)) {
+                $this->app->register(FluxServiceProvider::class);
             }
         } catch (\Throwable $e) {
             // fallback: attempt to register and ignore failures
             try {
-                $this->app->register(\Livewire\LivewireServiceProvider::class);
+                $this->app->register(LivewireServiceProvider::class);
             } catch (\Throwable $ignored) {
             }
             try {
-                if (class_exists(\Flux\FluxServiceProvider::class)) {
-                    $this->app->register(\Flux\FluxServiceProvider::class);
+                if (class_exists(FluxServiceProvider::class)) {
+                    $this->app->register(FluxServiceProvider::class);
                 }
             } catch (\Throwable $ignored) {
             }
         }
 
         // Resolve Livewire facade/class
-        $livewire = class_exists(\Livewire\Livewire::class) ? \Livewire\Livewire::class : null;
+        $livewire = class_exists(Livewire::class) ? Livewire::class : null;
         if ($livewire === null) {
             return; // Can't proceed without the registrar
         }
@@ -124,7 +130,7 @@ class WorkbenchServiceProvider extends ServiceProvider
 
         $namespace = 'Workbench\\App\\Livewire';
 
-        $finder = new \Symfony\Component\Finder\Finder;
+        $finder = new Finder;
         $finder->files()->in($componentsPath)->name('*.php');
 
         foreach ($finder as $file) {
@@ -144,7 +150,7 @@ class WorkbenchServiceProvider extends ServiceProvider
             }
 
             // Only register classes that extend the Livewire Component base class
-            if (is_subclass_of($fqcn, \Livewire\Component::class)) {
+            if (is_subclass_of($fqcn, Component::class)) {
                 $alias = collect(explode('\\', $classPath))
                     ->map(fn ($part) => Str::kebab($part))
                     ->implode('.');

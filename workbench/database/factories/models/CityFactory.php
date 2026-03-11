@@ -3,6 +3,7 @@
 namespace Database\Factories\Models;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Workbench\App\Enums\CityStatus;
 use Workbench\App\Models\City;
 use Workbench\App\Models\Country;
 
@@ -20,7 +21,7 @@ class CityFactory extends Factory
             'population' => $this->faker->numberBetween(10_000, 5_000_000),
             'background' => $this->faker->sentence(),
             'is_capital' => $this->faker->boolean(),
-            'status' => \Workbench\App\Enums\CityStatus::Active,
+            'status' => CityStatus::Active,
             'geo' => [
                 'latitude' => $this->faker->latitude(),
                 'longitude' => $this->faker->longitude(),

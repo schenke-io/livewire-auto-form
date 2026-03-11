@@ -1,5 +1,6 @@
 <?php
 
+use Tests\TestCase;
 use Workbench\App\Models\User;
 
 it('tests the complete user wizard flow', function () {
@@ -25,7 +26,7 @@ it('tests the complete user wizard flow', function () {
         ->press('Save Changes')
         ->waitForText('Saved successfully');
 
-    /** @var \Tests\TestCase $this */
+    /** @var TestCase $this */
     $this->assertDatabaseHas('users', [
         'name' => 'John Doe',
         'email' => 'john@example.com',

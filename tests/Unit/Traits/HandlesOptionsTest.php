@@ -2,17 +2,20 @@
 
 namespace Tests\Unit\Traits;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use SchenkeIo\LivewireAutoForm\AutoFormOptions;
 use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
+use SchenkeIo\LivewireAutoForm\Traits\AutoFormLocalisedEnumOptions;
+use SchenkeIo\LivewireAutoForm\Traits\AutoFormModelOptions;
 use Tests\Feature\Livewire\Components\FlexibleTestComponent;
 use Tests\Feature\Livewire\Components\Models\ModelWithPureEnum;
 use Workbench\App\Models\City;
 use Workbench\App\Models\Country;
 
-class ModelWithOptions extends \Illuminate\Database\Eloquent\Model implements AutoFormOptions
+class ModelWithOptions extends Model implements AutoFormOptions
 {
     protected $table = 'model_with_options';
 
@@ -34,7 +37,7 @@ enum EnumWithOptions: string implements AutoFormOptions
 
 enum EnumWithIcons: string implements AutoFormOptions
 {
-    use \SchenkeIo\LivewireAutoForm\Traits\AutoFormLocalisedEnumOptions;
+    use AutoFormLocalisedEnumOptions;
 
     case One = 'one';
 
@@ -44,21 +47,21 @@ enum EnumWithIcons: string implements AutoFormOptions
     }
 }
 
-class ModelWithIconEnum extends \Illuminate\Database\Eloquent\Model
+class ModelWithIconEnum extends Model
 {
     protected $table = 'model_with_icon_enum';
 
     protected $casts = ['status' => EnumWithIcons::class];
 }
 
-class ModelWithEnumRelation extends \Illuminate\Database\Eloquent\Model
+class ModelWithEnumRelation extends Model
 {
     protected $table = 'model_with_enum_relation';
 
     protected $casts = ['status' => EnumWithOptions::class];
 }
 
-class ModelWithRelationWithOptions extends \Illuminate\Database\Eloquent\Model
+class ModelWithRelationWithOptions extends Model
 {
     protected $table = 'model_with_rel_options';
 
@@ -68,14 +71,14 @@ class ModelWithRelationWithOptions extends \Illuminate\Database\Eloquent\Model
     }
 }
 
-class ModelRelated extends \Illuminate\Database\Eloquent\Model
+class ModelRelated extends Model
 {
     protected $table = 'model_related';
 
     protected $fillable = ['name', 'code'];
 }
 
-class ModelWithVariousRelations extends \Illuminate\Database\Eloquent\Model
+class ModelWithVariousRelations extends Model
 {
     protected $table = 'model_with_various_relations';
 
@@ -173,7 +176,7 @@ it('resolves enum options with icons', function () {
     $options = $component->instance()->optionsFor('status');
 
     expect($options)->toBeArray()
-        ->and($options)->toContain(['one', 'enum_with_icons.one', 'icon-one']);
+        ->and($options)->toContain(['one', 'EnumWithIcons.one', 'icon-one']);
 });
 
 it('resolves model options for a relation', function () {
@@ -347,9 +350,9 @@ it('uses AutoFormModelOptions trait for default model options', function () {
         $table->string('name');
     });
 
-    $traitModelClass = new class extends \Illuminate\Database\Eloquent\Model implements AutoFormOptions
+    $traitModelClass = new class extends Model implements AutoFormOptions
     {
-        use \SchenkeIo\LivewireAutoForm\Traits\AutoFormModelOptions;
+        use AutoFormModelOptions;
 
         protected $table = 'trait_models';
 
@@ -419,7 +422,7 @@ it('returns empty array if enum class does not exist in enumOptionsFor', functio
         $table->id();
         $table->string('status')->nullable();
     });
-    $model = new class extends \Illuminate\Database\Eloquent\Model
+    $model = new class extends Model
     {
         protected $table = 'model_with_fake_enum';
 

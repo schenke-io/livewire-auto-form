@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire\Components;
 
+use Illuminate\Database\Eloquent\Model;
 use SchenkeIo\LivewireAutoForm\AutoForm;
 
 class FlexibleTestComponent extends AutoForm
@@ -18,7 +19,7 @@ class FlexibleTestComponent extends AutoForm
     {
         $this->customRules = $rules;
         $this->mockModel = $mockModel;
-        if ($model && $model instanceof \Illuminate\Database\Eloquent\Model) {
+        if ($model && $model instanceof Model) {
             $this->setModel($model);
         }
     }

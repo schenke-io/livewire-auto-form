@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Orchestra\Testbench\Concerns\WithWorkbench;
 use Tests\TestCase;
 
 /*
@@ -13,10 +15,10 @@ use Tests\TestCase;
 |
 */
 
-uses(TestCase::class, Illuminate\Foundation\Testing\RefreshDatabase::class)
+uses(TestCase::class, RefreshDatabase::class)
     ->in('Feature', 'Unit/Traits');
 
-uses(TestCase::class, Orchestra\Testbench\Concerns\WithWorkbench::class)
+uses(TestCase::class, WithWorkbench::class)
     ->in('Browser');
 
 /*

@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
+use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
 
 class FormCollectionTest extends TestCase
 {
@@ -54,7 +55,7 @@ class FormCollectionTest extends TestCase
     public function test_use_of_system_key_throws_exception_in_set()
     {
         $form = new FormCollection;
-        $this->expectException(\SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException::class);
+        $this->expectException(LivewireAutoFormException::class);
         $this->expectExceptionMessage('[SchenkeIo\LivewireAutoForm\Helpers\FormCollection]');
         $form->{FormCollection::SYSTEM_KEY} = 'foo';
     }
@@ -62,7 +63,7 @@ class FormCollectionTest extends TestCase
     public function test_use_of_system_key_throws_exception_in_put()
     {
         $form = new FormCollection;
-        $this->expectException(\SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException::class);
+        $this->expectException(LivewireAutoFormException::class);
         $this->expectExceptionMessage('[SchenkeIo\LivewireAutoForm\Helpers\FormCollection]');
         $form->put(FormCollection::SYSTEM_KEY, 'foo');
     }
@@ -70,7 +71,7 @@ class FormCollectionTest extends TestCase
     public function test_use_of_system_key_throws_exception_in_offset_set()
     {
         $form = new FormCollection;
-        $this->expectException(\SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException::class);
+        $this->expectException(LivewireAutoFormException::class);
         $this->expectExceptionMessage('[SchenkeIo\LivewireAutoForm\Helpers\FormCollection]');
         $form[FormCollection::SYSTEM_KEY] = 'foo';
     }

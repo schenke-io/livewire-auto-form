@@ -2,6 +2,9 @@
 
 namespace Workbench\App\Livewire\Forms;
 
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
 use SchenkeIo\LivewireAutoForm\AutoWizardForm;
 use Workbench\App\Models\User;
 
@@ -48,7 +51,7 @@ class UserWizardForm extends AutoWizardForm
         ];
     }
 
-    public function render(): \Illuminate\Contracts\View\View|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\Support\Htmlable
+    public function render(): View|Factory|Htmlable
     {
         return view('livewire.user-wizard')
             ->layout('layouts.app');

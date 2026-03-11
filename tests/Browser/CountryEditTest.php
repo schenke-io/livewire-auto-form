@@ -1,5 +1,7 @@
 <?php
 
+use Tests\TestCase;
+use Workbench\App\Enums\CityStatus;
 use Workbench\App\Models\City;
 use Workbench\App\Models\Country;
 
@@ -42,7 +44,7 @@ it('verifies adding a new city', function () {
         ->type("[dusk='new-city-field-geo-latitude']", '1.23')
         ->type("[dusk='new-city-field-geo-longitude']", '4.56')
         ->check("[dusk='new-city-field-is-capital']")
-        ->select("[dusk='new-city-field-status']", \Workbench\App\Enums\CityStatus::Active->value)
+        ->select("[dusk='new-city-field-status']", CityStatus::Active->value)
         ->click("[dusk='save-new-city']")
         ->waitForText('Saved successfully');
 
@@ -78,7 +80,7 @@ it('tests borders management in country editor', function () {
     expect($country->refresh()->borders)->toHaveCount(1);
     $border = $country->borders->first();
     expect($border)->not->toBeNull();
-    /** @var \Workbench\App\Models\Country $border */
+    /** @var Country $border */
     expect($border->pivot->border_length_km)->toBe(100);
 
     // Update pivot field
@@ -89,7 +91,7 @@ it('tests borders management in country editor', function () {
         ->click("[dusk='save-border']")
         ->waitForText('Saved successfully');
 
-    /** @var \Tests\TestCase $this */
+    /** @var TestCase $this */
     $this->assertDatabaseHas('country_borders', [
         'country_id' => $country->id,
         'neighbor_id' => $otherCountry->id,

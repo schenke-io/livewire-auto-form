@@ -2,10 +2,17 @@
 
 namespace Tests\Feature\Livewire\Core;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Collection;
+use Mockery\MockInterface;
 use SchenkeIo\LivewireAutoForm\Helpers\CrudProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\DataProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
+use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
 use SchenkeIo\LivewireAutoForm\Helpers\ModelResolver;
+use SchenkeIo\LivewireAutoForm\Helpers\RelationshipHandlers\HasManyHandler;
 use Workbench\App\Models\City;
 use Workbench\App\Models\Country;
 
@@ -168,7 +175,7 @@ it('throws relationDoesNotExist exception for invalid nested relation', function
     $method->setAccessible(true);
     // 'name' is a field (string), not a model, so 'name.something' should trigger the exception
     expect(fn () => $method->invoke($processor, $city, 'name.something'))
-        ->toThrow(\SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException::class);
+        ->toThrow(LivewireAutoFormException::class);
 });
 
 it('covers the save method', function () {
@@ -269,7 +276,7 @@ it('resolves nested relations', function () {
     $method->setAccessible(true);
     $relation = $method->invoke($processor, $city, 'country.cities');
 
-    expect($relation)->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+    expect($relation)->toBeInstanceOf(HasMany::class);
 });
 
 it('save() returns early if root model not found', function () {
@@ -398,7 +405,7 @@ it('HasManyHandler save updates existing model', function () {
     $state->setRootModel(Country::class, $country->id);
 
     $relation = $country->cities();
-    $handler = new \SchenkeIo\LivewireAutoForm\Helpers\RelationshipHandlers\HasManyHandler;
+    $handler = new HasManyHandler;
     $handler->save($relation, $country, 'cities', $city->id, ['name' => 'Updated City Name'], $state);
 
     $city->refresh();
@@ -459,7 +466,7 @@ it('getRelationList skips nested fields in select', function () {
     ];
 
     $list = $processor->getRelationList('cities', $rules);
-    expect($list)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+    expect($list)->toBeInstanceOf(Collection::class);
 });
 
 it('covers saveRelatedModel BelongsTo target change', function () {
@@ -594,13 +601,13 @@ it('covers delete for BelongsTo (set foreign key to null)', function () {
     $mockCity = \Mockery::mock(City::class)->makePartial();
     $mockCity->exists = true;
 
-    $relation = \Mockery::mock(\Illuminate\Database\Eloquent\Relations\BelongsTo::class);
+    $relation = \Mockery::mock(BelongsTo::class);
     $relation->shouldReceive('getForeignKeyName')->andReturn('country_id');
 
     $mockCity->shouldReceive('country')->andReturn($relation);
     $mockCity->shouldReceive('update')->with(['country_id' => null])->once()->andReturn(true);
 
-    /** @var \Mockery\MockInterface&\SchenkeIo\LivewireAutoForm\Helpers\ModelResolver $resolver */
+    /** @var MockInterface&ModelResolver $resolver */
     $resolver = \Mockery::mock(ModelResolver::class);
     $resolver->shouldReceive('resolve')->andReturn($mockCity);
 
@@ -641,7 +648,7 @@ it('covers getRelationList catch block', function () {
     // Call with a non-existent relation that will cause BadMethodCallException
     $result = $processor->getRelationList('nonExistentRelation', ['nonExistentRelation.name' => 'required']);
 
-    expect($result)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+    expect($result)->toBeInstanceOf(Collection::class);
     expect($result)->toBeEmpty();
 });
 
@@ -651,7 +658,7 @@ it('reaches line 301 in CrudProcessor', function () {
     $state->setRootModel(City::class, $city->id);
     $state->autoSave = true;
 
-    /** @var \Mockery\MockInterface&\SchenkeIo\LivewireAutoForm\Helpers\ModelResolver $resolver */
+    /** @var MockInterface&ModelResolver $resolver */
     $resolver = \Mockery::mock(ModelResolver::class);
     $resolver->shouldReceive('resolve')->andReturn(null);
 
@@ -675,7 +682,7 @@ it('reaches line 326 in CrudProcessor', function () {
     $mockCountry->shouldReceive('refresh')->andReturnSelf();
     $mockCountry->shouldReceive('getTable')->andReturn('countries');
 
-    /** @var \Mockery\MockInterface&\SchenkeIo\LivewireAutoForm\Helpers\ModelResolver $resolver */
+    /** @var MockInterface&ModelResolver $resolver */
     $resolver = \Mockery::mock(ModelResolver::class);
     $resolver->shouldReceive('resolve')->with($state, '', $city->id)->andReturn($city);
     $resolver->shouldReceive('resolve')->with($state, 'country', 1)->andReturn($mockCountry);
@@ -703,7 +710,7 @@ it('reaches line 476 in CrudProcessor', function () {
         if ($e instanceof \ReflectionException && $e->getPrevious()) {
             $e = $e->getPrevious();
         }
-        expect(get_class($e))->toBe(\SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException::class);
+        expect(get_class($e))->toBe(LivewireAutoFormException::class);
         expect($e->getMessage())->toContain('[SchenkeIo\LivewireAutoForm\Helpers\CrudProcessor]');
     }
 });
@@ -732,7 +739,7 @@ it('covers getRelationList qualifiedColumns with dots', function () {
 
     // Using a rule that already has a dot (though unusual for getRelationList columns)
     $result = $processor->getRelationList('cities', ['cities.other_table.field' => 'required']);
-    expect($result)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+    expect($result)->toBeInstanceOf(Collection::class);
 });
 
 it('reaches line 481 in CrudProcessor', function () {
@@ -817,7 +824,7 @@ it('covers updatedForm when target model does not exist', function () {
     $mockModel->shouldReceive('getAttribute')->andReturn(null);
     $mockModel->exists = false;
 
-    /** @var \Mockery\MockInterface&\SchenkeIo\LivewireAutoForm\Helpers\ModelResolver $resolver */
+    /** @var MockInterface&ModelResolver $resolver */
     $resolver = \Mockery::mock(ModelResolver::class);
     $resolver->shouldReceive('resolve')->with($state, '', $city->id)->andReturn($city);
     $resolver->shouldReceive('resolve')->with($state, '', null)->andReturn($mockModel);
@@ -847,7 +854,7 @@ it('saveRelatedModel uses update when no handler is found', function () {
     $state->setRootModel(City::class, $city->id);
 
     // Mock a relation that is NOT handled (not BelongsTo, BelongsToMany, HasMany, MorphMany)
-    $mockRelation = \Mockery::mock(\Illuminate\Database\Eloquent\Relations\Relation::class);
+    $mockRelation = \Mockery::mock(Relation::class);
     $mockRelation->shouldReceive('getRelated')->andReturn($city);
 
     $mockModel = \Mockery::mock(City::class)->makePartial();
@@ -855,7 +862,7 @@ it('saveRelatedModel uses update when no handler is found', function () {
     $mockModel->shouldReceive('someRelation')->andReturn($mockRelation);
     $mockModel->shouldReceive('update')->once()->andReturn(true);
 
-    /** @var \Mockery\MockInterface&\SchenkeIo\LivewireAutoForm\Helpers\ModelResolver $resolver */
+    /** @var MockInterface&ModelResolver $resolver */
     $resolver = \Mockery::mock(ModelResolver::class);
     $resolver->shouldReceive('resolve')->with($state, '', $city->id)->andReturn($mockModel);
     $resolver->shouldReceive('resolve')->with($state, 'someRelation', null)->andReturn($mockModel);

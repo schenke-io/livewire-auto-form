@@ -2,6 +2,8 @@
 
 namespace Tests;
 
+use Flux\FluxServiceProvider;
+use Illuminate\Foundation\Application;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 use SchenkeIo\LivewireAutoForm\LivewireAutoFormServiceProvider;
@@ -18,7 +20,7 @@ abstract class TestCase extends BaseTestCase
     {
         return [
             LivewireServiceProvider::class,
-            \Flux\FluxServiceProvider::class,
+            FluxServiceProvider::class,
             LivewireAutoFormServiceProvider::class,
             WorkbenchServiceProvider::class,
         ];
@@ -27,7 +29,7 @@ abstract class TestCase extends BaseTestCase
     /**
      * Define environment setup.
      *
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      * @return void
      */
     protected function getEnvironmentSetUp($app)

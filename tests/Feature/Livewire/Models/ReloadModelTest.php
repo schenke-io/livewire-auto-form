@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire\Models;
 
+use Livewire\Livewire;
 use Tests\Feature\Livewire\Components\FlexibleTestComponent;
 use Workbench\App\Models\City;
 
@@ -9,7 +10,7 @@ it('verifies reloadModel with a different model instance updates the root model'
     $city1 = City::factory()->create(['name' => 'City 1']);
     $city2 = City::factory()->create(['name' => 'City 2']);
 
-    $component = \Livewire\Livewire::test(FlexibleTestComponent::class, [
+    $component = Livewire::test(FlexibleTestComponent::class, [
         'model' => $city1,
         'rules' => ['name' => 'required'],
     ]);

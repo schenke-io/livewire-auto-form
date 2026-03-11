@@ -2,13 +2,23 @@
 
 namespace Tests\Unit\Traits;
 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use SchenkeIo\LivewireAutoForm\AutoFormOptions;
 use SchenkeIo\LivewireAutoForm\Traits\AutoFormLocalisedEnumOptions;
+use SchenkeIo\LivewireAutoForm\Traits\AutoFormLocalisedModelOptions;
 
 uses()->group('traits');
 
 beforeEach(function () {
-    \Illuminate\Support\Facades\Schema::create('localised_models', function (\Illuminate\Database\Schema\Blueprint $table) {
+    Schema::create('localised_models', function (Blueprint $table) {
+        $table->string('id')->primary();
+        $table->string('name')->nullable();
+        $table->timestamps();
+    });
+
+    Schema::create('localised_model_with_traits', function (Blueprint $table) {
         $table->string('id')->primary();
         $table->string('name')->nullable();
         $table->timestamps();
@@ -49,9 +59,9 @@ enum IconColorEnum: string implements AutoFormOptions
 /**
  * Helper model for testing localised options.
  */
-class LocalisedModel extends \Illuminate\Database\Eloquent\Model implements AutoFormOptions
+class LocalisedModel extends Model implements AutoFormOptions
 {
-    use AutoFormLocalisedEnumOptions;
+    use AutoFormLocalisedModelOptions;
 
     protected $table = 'localised_models';
 
@@ -65,33 +75,53 @@ class LocalisedModel extends \Illuminate\Database\Eloquent\Model implements Auto
     }
 }
 
+class LocalisedModelWithTrait extends Model implements AutoFormOptions
+{
+    use AutoFormLocalisedModelOptions;
+
+    protected $table = 'localised_model_with_traits';
+
+    protected $fillable = ['id', 'name'];
+
+    public $incrementing = false;
+}
+
 it('generates options using default snake class prefix when no mask or constant provided', function () {
     $options = ColorEnum::getOptions();
 
     expect($options)->toBeArray()
-        ->and($options['red'])->toBe('color_enum.red')
-        ->and($options['blue'])->toBe('color_enum.blue');
+        ->and($options['red'])->toBe('ColorEnum.red')
+        ->and($options['blue'])->toBe('ColorEnum.blue');
 });
 
 it('uses class constant OPTION_TRANSLATION_PREFIX when provided', function () {
     $options = PrefixedColorEnum::getOptions();
 
-    expect($options['red'])->toBe('enums.colors.red')
-        ->and($options['blue'])->toBe('enums.colors.blue');
+    expect($options['red'])->toBe('enums.colors.PrefixedColorEnum.red')
+        ->and($options['blue'])->toBe('enums.colors.PrefixedColorEnum.blue');
 });
 
 it('allows overriding prefix via labelMask parameter', function () {
     $options = ColorEnum::getOptions('ui.labels.colors');
 
-    expect($options['red'])->toBe('ui.labels.colors.red')
-        ->and($options['blue'])->toBe('ui.labels.colors.blue');
+    expect($options['red'])->toBe('ui.labels.colors.ColorEnum.red')
+        ->and($options['blue'])->toBe('ui.labels.colors.ColorEnum.blue');
 });
 
 it('includes icons when icon() method exists', function () {
     $options = IconColorEnum::getOptions();
 
-    expect($options['red'])->toBe(['icon_color_enum.red', 'heroicon-o-red'])
-        ->and($options['blue'])->toBe(['icon_color_enum.blue', 'heroicon-o-blue']);
+    expect($options['red'])->toBe(['IconColorEnum.red', 'heroicon-o-red'])
+        ->and($options['blue'])->toBe(['IconColorEnum.blue', 'heroicon-o-blue']);
+});
+
+it('generates options for models with localization using AutoFormLocalisedModelOptions', function () {
+    LocalisedModelWithTrait::create(['id' => 'm1', 'name' => 'Model 1']);
+
+    $options = LocalisedModelWithTrait::getOptions();
+
+    expect($options)->toBeArray()
+        ->and($options['m1'])->toBe('LocalisedModelWithTrait.m1');
 });
 
 it('generates options for models with localization and icons', function () {
@@ -100,5 +130,5 @@ it('generates options for models with localization and icons', function () {
     $options = LocalisedModel::getOptions();
 
     expect($options)->toBeArray()
-        ->and($options['m1'])->toBe('localised_model.m1');
+        ->and($options['m1'])->toBe(['LocalisedModel.m1', 'heroicon-m-model']);
 });

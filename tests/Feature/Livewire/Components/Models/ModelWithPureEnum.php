@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Livewire\Components\Models;
 
-class ModelWithPureEnum extends \Illuminate\Database\Eloquent\Model
+use Illuminate\Database\Eloquent\Model;
+
+class ModelWithPureEnum extends Model
 {
     protected $casts = [
         'pure' => PureEnum::class,

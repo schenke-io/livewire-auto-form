@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Livewire\Components\Models;
 
-class ModelWithInvalidEnumCast extends \Illuminate\Database\Eloquent\Model
+use Illuminate\Database\Eloquent\Model;
+
+class ModelWithInvalidEnumCast extends Model
 {
     protected $casts = [
         'invalid' => 'NonExistentEnum',

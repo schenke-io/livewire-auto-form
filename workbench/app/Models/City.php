@@ -6,6 +6,7 @@ use Database\Factories\Models\CityFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Workbench\App\Enums\CityStatus;
 
 /**
  * The City model represents a city within a country, including its geographic
@@ -38,7 +39,7 @@ class City extends Model
     protected function casts(): array
     {
         return [
-            'status' => \Workbench\App\Enums\CityStatus::class,
+            'status' => CityStatus::class,
             'geo' => 'array',
         ];
     }

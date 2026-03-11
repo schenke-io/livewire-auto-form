@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\View\ViewException;
 use Livewire\Livewire;
 use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
 use Tests\Feature\Livewire\Components\TestWizard;
@@ -30,7 +31,7 @@ it('validates structure on mount', function () {
         ]);
         $this->fail('Exception not thrown');
     } catch (\Throwable $e) {
-        $actual = $e instanceof \Illuminate\View\ViewException ? $e->getPrevious() : $e;
+        $actual = $e instanceof ViewException ? $e->getPrevious() : $e;
         /** @var \Throwable $actual */
         expect($actual)->toBeInstanceOf(LivewireAutoFormException::class);
         expect($actual->getMessage())->toContain('[Tests\Feature\Livewire\Components\TestWizard]');
@@ -137,7 +138,7 @@ it('throws exception if field in structure is not in rules', function () {
         ]);
         $this->fail('Exception not thrown');
     } catch (\Throwable $e) {
-        $actual = $e instanceof \Illuminate\View\ViewException ? $e->getPrevious() : $e;
+        $actual = $e instanceof ViewException ? $e->getPrevious() : $e;
         /** @var \Throwable $actual */
         expect($actual)->toBeInstanceOf(LivewireAutoFormException::class);
     }

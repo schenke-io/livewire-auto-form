@@ -2,6 +2,7 @@
 
 namespace SchenkeIo\LivewireAutoForm\Traits;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
 
@@ -160,7 +161,7 @@ trait HandlesRelations
      * defined in the `rules()` to optimize database performance.
      *
      * @param  string  $relation  The name of the relationship.
-     * @return Collection<int, \Illuminate\Database\Eloquent\Model>
+     * @return Collection<int, Model>
      */
     public function getRelationList(string $relation): Collection
     {

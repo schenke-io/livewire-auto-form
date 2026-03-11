@@ -162,7 +162,7 @@ it('uses AutoFormLocalisedOptions trait for automatic translation keys', functio
     };
 
     // Default prefix is snake_case of class name: enum_with_trait
-    app('translator')->addLines(['enum_with_trait.1' => 'Translated One'], 'en');
+    app('translator')->addLines(['EnumWithTrait.1' => 'Translated One'], 'en');
     app()->setLocale('en');
 
     $component = Livewire::test(FlexibleTestComponent::class, [
@@ -180,7 +180,7 @@ it('uses custom prefix in AutoFormLocalisedOptions trait', function () {
         protected $casts = ['status' => EnumWithTraitAndPrefix::class];
     };
 
-    app('translator')->addLines(['custom.prefix.2' => 'Translated Two'], 'en');
+    app('translator')->addLines(['custom.prefix.EnumWithTraitAndPrefix.2' => 'Translated Two'], 'en');
     app()->setLocale('en');
 
     $component = Livewire::test(FlexibleTestComponent::class, [
@@ -198,7 +198,7 @@ it('allows overriding prefix via labelMask in AutoFormLocalisedOptions trait', f
         protected $casts = ['status' => EnumWithTraitAndPrefix::class];
     };
 
-    app('translator')->addLines(['override.2' => 'Overridden Two'], 'en');
+    app('translator')->addLines(['override.EnumWithTraitAndPrefix.2' => 'Overridden Two'], 'en');
     app()->setLocale('en');
 
     $component = Livewire::test(FlexibleTestComponent::class, [

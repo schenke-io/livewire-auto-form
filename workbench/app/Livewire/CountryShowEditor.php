@@ -2,8 +2,13 @@
 
 namespace Workbench\App\Livewire;
 
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Model;
 use Livewire\Component;
 use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
+use SchenkeIo\LivewireAutoForm\Traits\HasAutoForm;
 use Workbench\App\Livewire\Traits\EditorHelper;
 use Workbench\App\Models\Country;
 
@@ -23,7 +28,7 @@ use Workbench\App\Models\Country;
 class CountryShowEditor extends Component
 {
     use EditorHelper;
-    use \SchenkeIo\LivewireAutoForm\Traits\HasAutoForm;
+    use HasAutoForm;
 
     public function boot(): void
     {
@@ -64,7 +69,7 @@ class CountryShowEditor extends Component
     /**
      * @throws LivewireAutoFormException
      */
-    public function mount(\Illuminate\Database\Eloquent\Model $country): void
+    public function mount(Model $country): void
     {
         $this->autoSave = false;
         $this->setModel($country);
@@ -77,7 +82,7 @@ class CountryShowEditor extends Component
         session()->flash('status', 'Saved successfully');
     }
 
-    public function render(): \Illuminate\Contracts\View\View|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\Support\Htmlable
+    public function render(): View|Factory|Htmlable
     {
         return view('livewire.country-show-editor');
     }

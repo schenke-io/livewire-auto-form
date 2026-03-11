@@ -2,9 +2,6 @@
 
 namespace SchenkeIo\LivewireAutoForm\Traits;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
-
 /**
  * Trait AutoFormLocalisedEnumOptions
  *
@@ -38,35 +35,32 @@ trait AutoFormLocalisedEnumOptions
      */
     public static function getOptions(?string $labelMask = null): array
     {
-        $prefix = $labelMask ?? (defined('static::OPTION_TRANSLATION_PREFIX') ? static::OPTION_TRANSLATION_PREFIX : Str::snake(class_basename(static::class)));
-
         $options = [];
-        if (enum_exists(static::class)) {
-            /** @phpstan-ignore-next-line */
-            foreach (static::cases() as $case) {
-                /** @phpstan-ignore-next-line */
-                $value = $case instanceof \BackedEnum ? $case->value : $case->name;
-
-                $key = $prefix ? "$prefix.$value" : (string) $value;
-                $label = __($key);
-                /** @phpstan-ignore-next-line */
-                if (method_exists($case, 'icon')) {
-                    /** @phpstan-ignore-next-line */
-                    $options[$value] = [$label, $case->icon()];
-                } else {
-                    $options[$value] = $label;
-                }
-            }
-            /** @phpstan-ignore-next-line */
-        } elseif (is_subclass_of(static::class, Model::class)) {
-            /** @phpstan-ignore-next-line */
-            foreach (static::all() as $instance) {
-                $value = $instance->getKey();
-                $label = $prefix ? __("$prefix.$value") : ($instance->name ?? (string) $value);
+        foreach (static::cases() as $case) {
+            $label = $case->label($labelMask);
+            $value = $case->value();
+            if (method_exists($case, 'icon')) {
+                $options[$value] = [$label, $case->icon()];
+            } else {
                 $options[$value] = $label;
             }
         }
 
         return $options;
+    }
+
+    public function label(?string $labelMask = null): string
+    {
+        $prefix = $labelMask ?: (defined('static::OPTION_TRANSLATION_PREFIX') ? constant('static::OPTION_TRANSLATION_PREFIX') : '');
+        $base = class_basename(static::class);
+        $value = $this->value();
+        $key = $prefix ? "{$prefix}.{$base}.{$value}" : "{$base}.{$value}";
+
+        return __($key);
+    }
+
+    protected function value(): string
+    {
+        return $this instanceof \BackedEnum ? $this->value : $this->name;
     }
 }

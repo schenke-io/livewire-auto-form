@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use SchenkeIo\LivewireAutoForm\AutoFormOptions;
+use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
 
 /**
  * The Country model represents a nation that can contain multiple cities.
@@ -30,7 +31,7 @@ class Country extends Model implements AutoFormOptions
         if ($labelMask && str_contains($labelMask, '(')) {
             preg_match_all("/\((.*?)\)/", $labelMask, $matches);
             if (empty($matches[1])) {
-                throw \SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException::optionsMaskSyntax($labelMask, self::class);
+                throw LivewireAutoFormException::optionsMaskSyntax($labelMask, self::class);
             }
             $columns = array_unique(array_merge(['id'], $matches[1]));
 
