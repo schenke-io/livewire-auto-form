@@ -95,7 +95,8 @@ it('translates enum fallback labels', function () {
 
     $options = $component->instance()->optionsFor('status', 'test.(name)');
 
-    // Expected: [[ 'draft', 'Le Draft' ], ...]
+    // Expected: [[ 'DRAFT', 'Le Draft' ], ...]
+    expect($options[0][0])->toBe('DRAFT');
     expect($options[0][1])->toBe('Le Draft');
 });
 
@@ -162,7 +163,7 @@ it('uses AutoFormLocalisedOptions trait for automatic translation keys', functio
     };
 
     // Default prefix is snake_case of class name: enum_with_trait
-    app('translator')->addLines(['EnumWithTrait.1' => 'Translated One'], 'en');
+    app('translator')->addLines(['EnumWithTrait.one' => 'Translated One'], 'en');
     app()->setLocale('en');
 
     $component = Livewire::test(FlexibleTestComponent::class, [
@@ -171,6 +172,7 @@ it('uses AutoFormLocalisedOptions trait for automatic translation keys', functio
     ]);
 
     $options = $component->instance()->optionsFor('status');
+    expect($options[0][0])->toBe('ONE');
     expect($options[0][1])->toBe('Translated One');
 });
 
@@ -180,7 +182,7 @@ it('uses custom prefix in AutoFormLocalisedOptions trait', function () {
         protected $casts = ['status' => EnumWithTraitAndPrefix::class];
     };
 
-    app('translator')->addLines(['custom.prefix.EnumWithTraitAndPrefix.2' => 'Translated Two'], 'en');
+    app('translator')->addLines(['custom.prefix.EnumWithTraitAndPrefix.two' => 'Translated Two'], 'en');
     app()->setLocale('en');
 
     $component = Livewire::test(FlexibleTestComponent::class, [
@@ -198,7 +200,7 @@ it('allows overriding prefix via labelMask in AutoFormLocalisedOptions trait', f
         protected $casts = ['status' => EnumWithTraitAndPrefix::class];
     };
 
-    app('translator')->addLines(['override.EnumWithTraitAndPrefix.2' => 'Overridden Two'], 'en');
+    app('translator')->addLines(['override.EnumWithTraitAndPrefix.two' => 'Overridden Two'], 'en');
     app()->setLocale('en');
 
     $component = Livewire::test(FlexibleTestComponent::class, [

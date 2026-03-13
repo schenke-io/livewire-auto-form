@@ -90,29 +90,29 @@ it('generates options using default snake class prefix when no mask or constant 
     $options = ColorEnum::getOptions();
 
     expect($options)->toBeArray()
-        ->and($options['red'])->toBe('ColorEnum.red')
-        ->and($options['blue'])->toBe('ColorEnum.blue');
+        ->and($options['RED'])->toBe('ColorEnum.red')
+        ->and($options['BLUE'])->toBe('ColorEnum.blue');
 });
 
 it('uses class constant OPTION_TRANSLATION_PREFIX when provided', function () {
     $options = PrefixedColorEnum::getOptions();
 
-    expect($options['red'])->toBe('enums.colors.PrefixedColorEnum.red')
-        ->and($options['blue'])->toBe('enums.colors.PrefixedColorEnum.blue');
+    expect($options['RED'])->toBe('enums.colors.PrefixedColorEnum.red')
+        ->and($options['BLUE'])->toBe('enums.colors.PrefixedColorEnum.blue');
 });
 
 it('allows overriding prefix via labelMask parameter', function () {
     $options = ColorEnum::getOptions('ui.labels.colors');
 
-    expect($options['red'])->toBe('ui.labels.colors.ColorEnum.red')
-        ->and($options['blue'])->toBe('ui.labels.colors.ColorEnum.blue');
+    expect($options['RED'])->toBe('ui.labels.colors.ColorEnum.red')
+        ->and($options['BLUE'])->toBe('ui.labels.colors.ColorEnum.blue');
 });
 
 it('includes icons when icon() method exists', function () {
     $options = IconColorEnum::getOptions();
 
-    expect($options['red'])->toBe(['IconColorEnum.red', 'heroicon-o-red'])
-        ->and($options['blue'])->toBe(['IconColorEnum.blue', 'heroicon-o-blue']);
+    expect($options['RED'])->toBe(['IconColorEnum.red', 'heroicon-o-red'])
+        ->and($options['BLUE'])->toBe(['IconColorEnum.blue', 'heroicon-o-blue']);
 });
 
 it('generates options for models with localization using AutoFormLocalisedModelOptions', function () {

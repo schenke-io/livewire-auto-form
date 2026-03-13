@@ -176,7 +176,7 @@ it('resolves enum options with icons', function () {
     $options = $component->instance()->optionsFor('status');
 
     expect($options)->toBeArray()
-        ->and($options)->toContain(['one', 'EnumWithIcons.one', 'icon-one']);
+        ->and($options)->toContain(['One', 'EnumWithIcons.one', 'icon-one']);
 });
 
 it('resolves model options for a relation', function () {

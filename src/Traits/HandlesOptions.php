@@ -181,8 +181,9 @@ trait HandlesOptions
             }
 
             return collect($enumClass::cases())->map(function ($case) use ($labelMask) {
-                $value = $case instanceof \BackedEnum ? $case->value : $case->name;
-                $label = $labelMask ? str_replace(['(name)', '(value)'], [(string) $case->name, (string) $value], $labelMask) : Str::headline($case->name);
+                $value = $case->name;
+                $caseValue = $case instanceof \BackedEnum ? $case->value : $case->name;
+                $label = $labelMask ? str_replace(['(name)', '(value)'], [(string) $case->name, (string) $caseValue], $labelMask) : Str::headline($case->name);
 
                 return [
                     $value,

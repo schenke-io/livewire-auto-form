@@ -38,7 +38,7 @@ trait AutoFormLocalisedEnumOptions
         $options = [];
         foreach (static::cases() as $case) {
             $label = $case->label($labelMask);
-            $value = $case->value();
+            $value = $case->name;
             if (method_exists($case, 'icon')) {
                 $options[$value] = [$label, $case->icon()];
             } else {
@@ -53,14 +53,9 @@ trait AutoFormLocalisedEnumOptions
     {
         $prefix = $labelMask ?: (defined('static::OPTION_TRANSLATION_PREFIX') ? constant('static::OPTION_TRANSLATION_PREFIX') : '');
         $base = class_basename(static::class);
-        $value = $this->value();
-        $key = $prefix ? "{$prefix}.{$base}.{$value}" : "{$base}.{$value}";
+        $name = strtolower($this->name);
+        $key = $prefix ? "{$prefix}.{$base}.{$name}" : "{$base}.{$name}";
 
         return __($key);
-    }
-
-    protected function value(): string
-    {
-        return $this instanceof \BackedEnum ? $this->value : $this->name;
     }
 }
