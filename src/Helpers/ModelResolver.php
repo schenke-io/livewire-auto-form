@@ -3,6 +3,8 @@
 namespace SchenkeIo\LivewireAutoForm\Helpers;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 /**
  * Handles the dynamic resolution and re-hydration of Eloquent model instances.
@@ -62,12 +64,11 @@ class ModelResolver
 
         if ($root instanceof Model && $shouldApplyToRoot) {
             // Apply current root form form to the re-hydrated model
-            foreach ($state->all() as $k => $v) {
-                $stringKey = (string) $k;
-                if (! is_array($v) && $root->isFillable($stringKey)) {
-                    if ($root->getAttribute($stringKey) !== $v) {
-                        $root->setAttribute($stringKey, $v);
-                    }
+            $rootData = Arr::where($state->all(), fn ($v) => ! is_array($v));
+            foreach ($rootData as $k => $v) {
+                $k = (string) $k;
+                if ($root->isFillable($k) && $root->getAttribute($k) !== $v) {
+                    $root->setAttribute($k, $v);
                 }
             }
         }
@@ -78,22 +79,18 @@ class ModelResolver
 
         // Resolve relationship (handles nested paths like 'cities.name')
         try {
-            $parts = explode('.', $context);
+            $parts = Str::of($context)->explode('.');
             $result = $root;
 
             foreach ($parts as $index => $part) {
                 if ($result === null) {
                     break;
                 }
-                $isLast = ($index === count($parts) - 1);
+                $isLast = ($index === $parts->count() - 1);
                 if ($isLast) {
-                    if ($id !== null) {
-                        /** @var mixed $result */
-                        $result = $result->{$part}()->find($id);
-                    } else {
-                        /** @var mixed $result */
-                        $result = $result->{$part}()->getRelated()->newInstance();
-                    }
+                    $result = ($id !== null)
+                        ? $result->{$part}()->find($id)
+                        : $result->{$part}()->getRelated()->newInstance();
                 } else {
                     $result = $result->{$part};
                 }
@@ -105,10 +102,11 @@ class ModelResolver
                     if ($id !== null && isset($contextData[$id]) && is_array($contextData[$id])) {
                         $contextData = $contextData[$id];
                     }
-                    foreach ($contextData as $k => $v) {
-                        $stringKey = (string) $k;
-                        if (! is_array($v) && $result->isFillable($stringKey)) {
-                            $result->setAttribute($stringKey, $v);
+                    $dataToFill = Arr::where($contextData, fn ($v) => ! is_array($v));
+                    foreach ($dataToFill as $k => $v) {
+                        $k = (string) $k;
+                        if ($result->isFillable($k) && $result->getAttribute($k) !== $v) {
+                            $result->setAttribute($k, $v);
                         }
                     }
                 }

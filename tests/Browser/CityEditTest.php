@@ -1,9 +1,6 @@
 <?php
 
-use Tests\TestCase;
 use Workbench\App\Models\City;
-
-uses(TestCase::class);
 use Workbench\App\Models\Country;
 
 it('confirms changes to a city field are persisted with auto-save enabled', function () {

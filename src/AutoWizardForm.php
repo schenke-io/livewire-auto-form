@@ -3,6 +3,7 @@
 namespace SchenkeIo\LivewireAutoForm;
 
 use SchenkeIo\LivewireAutoForm\Helpers\BaseAutoForm;
+use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
 
 /**
@@ -229,7 +230,7 @@ abstract class AutoWizardForm extends BaseAutoForm
     public function updated(string $name, mixed $value): void
     {
         $propertyName = $this->getPropertyName();
-        if ($name === "$propertyName.autoSave" && $value) {
+        if ($name === FormCollection::getPrefixedField('autoSave', $propertyName) && $value) {
             throw LivewireAutoFormException::autoSaveNotAllowedInWizard(static::class);
         }
         $this->traitUpdated($name, $value);

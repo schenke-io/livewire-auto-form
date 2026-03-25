@@ -8,10 +8,13 @@ use Illuminate\Support\Str;
 use SchenkeIo\LivewireAutoForm\AutoFormOptions;
 use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
 use SchenkeIo\LivewireAutoForm\Helpers\ModelResolver;
+use SchenkeIo\LivewireAutoForm\Options\OptionsFactory;
 use Throwable;
 
 /**
  * Handles option resolution logic for the form (Enums, Models, etc.).
+ *
+ * @method \SchenkeIo\LivewireAutoForm\Helpers\ModelResolver getModelResolver()
  *
  * This trait provides the necessary logic to automatically generate option arrays
  * for select inputs, radio buttons, or checkbox groups. It can resolve options
@@ -48,7 +51,8 @@ trait HandlesOptions
     public function optionsFor(string $key, ?string $labelMask = null): array
     {
         if (str_contains($key, '.')) {
-            [$relation, $attribute] = explode('.', $key, 2);
+            $relation = Str::before($key, '.');
+            $attribute = Str::after($key, '.');
 
             return $this->enumOptionsFor($attribute, $relation, $labelMask);
         }
@@ -79,7 +83,9 @@ trait HandlesOptions
             throw LivewireAutoFormException::rootModelNotSet(static::class);
         }
 
-        $root = (new ModelResolver)->resolve($this->form, '', $this->form->rootModelId);
+        /** @phpstan-ignore-next-line */
+        $resolver = method_exists($this, 'getModelResolver') ? $this->getModelResolver() : new ModelResolver;
+        $root = $resolver->resolve($this->form, '', $this->form->rootModelId);
 
         if (! $root) {
             throw LivewireAutoFormException::rootModelNotSet(static::class);
@@ -93,44 +99,12 @@ trait HandlesOptions
 
         $relatedModel = $relationObj->getRelated();
 
-        if (is_subclass_of($relatedModel::class, AutoFormOptions::class)) {
-            return $this->mapOptions($relatedModel::getOptions($labelMask));
+        if (! is_subclass_of($relatedModel::class, AutoFormOptions::class) &&
+            ! ($relationObj instanceof BelongsTo || $relationObj instanceof BelongsToMany)) {
+            throw LivewireAutoFormException::invalidRelationType($relation, $relationObj::class, static::class);
         }
 
-        if ($relationObj instanceof BelongsTo || $relationObj instanceof BelongsToMany) {
-            $idColumn = $relatedModel->getKeyName();
-
-            if ($labelMask && str_contains($labelMask, '(')) {
-                // It's a mask
-                preg_match_all("/\((.*?)\)/", $labelMask, $matches);
-                if (empty($matches[1])) {
-                    throw LivewireAutoFormException::optionsMaskSyntax($labelMask, static::class);
-                }
-                $columns = array_unique(array_merge([$idColumn], $matches[1]));
-
-                return $relatedModel::all($columns)->map(function ($m) use ($idColumn, $labelMask, $matches) {
-                    $label = $labelMask;
-                    foreach ($matches[1] as $col) {
-                        $label = str_replace("($col)", (string) $m->{$col}, $label);
-                    }
-
-                    return [
-                        $m->{$idColumn},
-                        __($label),
-                    ];
-                })->toArray();
-            } else {
-                // It's a column name (or null)
-                $labelColumn = $labelMask ?: 'name';
-
-                return $relatedModel::all([$idColumn, $labelColumn])->map(fn ($m) => [
-                    $m->{$idColumn},
-                    __($m->{$labelColumn}),
-                ])->toArray();
-            }
-        }
-
-        throw LivewireAutoFormException::invalidRelationType($relation, $relationObj::class, static::class);
+        return OptionsFactory::forModel($relatedModel::class)->getOptions($labelMask, static::class);
     }
 
     /**
@@ -153,7 +127,8 @@ trait HandlesOptions
         }
 
         try {
-            $resolver = new ModelResolver;
+            /** @phpstan-ignore-next-line */
+            $resolver = method_exists($this, 'getModelResolver') ? $this->getModelResolver() : new ModelResolver;
             $root = $resolver->resolve($this->form, '', $this->form->rootModelId);
             if (! $root) {
                 return [];
@@ -172,58 +147,11 @@ trait HandlesOptions
                 return [];
             }
 
-            if (is_subclass_of($enumClass, AutoFormOptions::class)) {
-                return $this->mapOptions($enumClass::getOptions($labelMask));
-            }
-
-            if ($labelMask && ! str_contains($labelMask, '(name)') && ! str_contains($labelMask, '(value)')) {
-                throw LivewireAutoFormException::optionsMaskSyntax($labelMask, static::class);
-            }
-
-            return collect($enumClass::cases())->map(function ($case) use ($labelMask) {
-                $value = $case->name;
-                $caseValue = $case instanceof \BackedEnum ? $case->value : $case->name;
-                $label = $labelMask ? str_replace(['(name)', '(value)'], [(string) $case->name, (string) $caseValue], $labelMask) : Str::headline($case->name);
-
-                return [
-                    $value,
-                    __((string) $label),
-                ];
-            })->toArray();
+            return OptionsFactory::forEnum($enumClass)->getOptions($labelMask, static::class);
         } catch (LivewireAutoFormException $e) {
             throw $e;
         } catch (Throwable) {
             return [];
         }
-    }
-
-    /**
-     * Maps an associative array of options to the format expected by the frontend.
-     *
-     * @param  array<string|int, string|array<string|int, mixed>>  $options
-     * @return array<int, array{0: string|int, 1: string}>
-     */
-    private function mapOptions(array $options): array
-    {
-        return collect($options)
-            ->map(function ($item, $value) {
-                if (is_array($item)) {
-                    if (isset($item[0]) && isset($item[1]) && is_string($item[0]) && is_string($item[1]) && ! isset($item['key'])) {
-                        /*
-                         * this is an icon array: [label, icon]
-                         */
-                        return [$value, __($item[0]), $item[1]];
-                    }
-                    /** @var array<string|int, mixed> $item */
-                    $key = $item['key'] ?? $item[0] ?? '';
-                    /** @var array<string, mixed> $replace */
-                    $replace = (array) ($item['replace'] ?? $item[1] ?? []);
-
-                    return [$value, __((string) $key, $replace)];
-                }
-
-                return [$value, __((string) $item)];
-            })
-            ->values()->toArray();
     }
 }

@@ -12,7 +12,7 @@ use SchenkeIo\LivewireAutoForm\Helpers\DataProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
 use SchenkeIo\LivewireAutoForm\Helpers\ModelResolver;
-use SchenkeIo\LivewireAutoForm\Helpers\RelationshipHandlers\HasManyHandler;
+use SchenkeIo\LivewireAutoForm\Strategies\Persistence\HasManyStrategy;
 use Workbench\App\Models\City;
 use Workbench\App\Models\Country;
 
@@ -398,21 +398,21 @@ it('covers saveRelatedModel update mode when model is not found', function () {
     expect(City::where('name', 'New Name')->exists())->toBeFalse();
 });
 
-it('HasManyHandler save updates existing model', function () {
+it('HasManyStrategy save updates existing model', function () {
     $country = Country::factory()->create();
     $city = City::factory()->create(['country_id' => $country->id]);
     $state = new FormCollection;
     $state->setRootModel(Country::class, $country->id);
 
     $relation = $country->cities();
-    $handler = new HasManyHandler;
-    $handler->save($relation, $country, 'cities', $city->id, ['name' => 'Updated City Name'], $state);
+    $strategy = new HasManyStrategy;
+    $strategy->save($relation, $country, 'cities', $city->id, ['name' => 'Updated City Name'], $state);
 
     $city->refresh();
     expect($city->name)->toBe('Updated City Name');
 });
 
-it('BelongsToHandler updateField returns false for non-ID field', function () {
+it('BelongsToStrategy updateField returns false for non-ID field', function () {
     $city = City::factory()->create();
     $country = Country::factory()->create();
     $city->country()->associate($country);
@@ -433,7 +433,7 @@ it('BelongsToHandler updateField returns false for non-ID field', function () {
     expect($country->name)->toBe('New Country Name');
 });
 
-it('BelongsToManyHandler updateField returns false for non-pivot field', function () {
+it('BelongsToManyStrategy updateField returns false for non-pivot field', function () {
     $country = Country::factory()->create();
     $neighbor = Country::factory()->create();
     $country->borders()->attach($neighbor->id);
@@ -760,7 +760,7 @@ it('reaches line 481 in CrudProcessor', function () {
     expect(true)->toBeTrue();
 });
 
-it('BelongsToHandler updates existing related model when ID has not changed', function () {
+it('BelongsToStrategy updates existing related model when ID has not changed', function () {
     $city = City::factory()->create();
     $country = Country::factory()->create(['name' => 'Old Name']);
     $city->country()->associate($country);
@@ -796,7 +796,7 @@ it('saveRelatedModel returns early if data is empty', function () {
     expect(true)->toBeTrue(); // Should not crash
 });
 
-it('HasManyHandler updateField returns false', function () {
+it('HasManyStrategy updateField returns false', function () {
     $country = Country::factory()->create();
     $city = City::factory()->create(['country_id' => $country->id]);
 

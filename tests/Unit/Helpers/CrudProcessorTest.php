@@ -3,18 +3,43 @@
 namespace Tests\Unit\Helpers;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Mockery;
 use SchenkeIo\LivewireAutoForm\Helpers\CrudProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\DataProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
 use SchenkeIo\LivewireAutoForm\Helpers\ModelResolver;
-use SchenkeIo\LivewireAutoForm\Helpers\RelationshipHandlers\RelationshipHandler;
+use SchenkeIo\LivewireAutoForm\Strategies\Persistence\PersistenceStrategy;
+use Tests\TestCase;
+use Workbench\App\Models\City;
+use Workbench\App\Models\Country;
 
+class ModelWithJson extends Model
+{
+    protected $table = 'model_with_json';
+
+    protected $guarded = [];
+
+    protected $casts = ['settings' => 'array'];
+}
+
+class ModelWithExplicitJson extends Model
+{
+    protected $table = 'model_with_explicit_json';
+
+    protected $guarded = [];
+}
+
+uses(TestCase::class);
 uses(Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->state = Mockery::mock(FormCollection::class);
+    $this->state->shouldReceive('getJsonColumns')->andReturn([]);
     $this->resolver = Mockery::mock(ModelResolver::class);
     $this->processor = Mockery::mock(DataProcessor::class);
     $this->crudProcessor = new CrudProcessor($this->state, $this->resolver, $this->processor);
@@ -40,6 +65,7 @@ it('save() calls saveRootModel and optionally saveRelatedModel', function () {
 
     // saveRootModel logic check
     $this->processor->shouldReceive('sanitizeValue')->andReturn('sanitized');
+    $this->processor->shouldReceive('translatePath')->andReturnArg(0);
     $rootModel->shouldReceive('forceFill')->with(Mockery::on(function ($arg) {
         return isset($arg['name']) && $arg['name'] === 'sanitized';
     }))->andReturnSelf();
@@ -56,6 +82,7 @@ it('save() calls saveRootModel and optionally saveRelatedModel', function () {
 
 it('updatedForm() returns saved=false when Auto-Save is off', function () {
     $this->processor->shouldReceive('sanitizeValue')->andReturn('clean');
+    $this->processor->shouldReceive('translatePath')->andReturnArg(0);
     $this->state->shouldReceive('getNullables')->andReturn([]);
     $this->state->shouldReceive('isAutoSave')->andReturn(false);
 
@@ -67,6 +94,7 @@ it('updatedForm() returns saved=false when Auto-Save is off', function () {
 
 it('updatedForm() returns saved=true and persists when Auto-Save is on', function () {
     $this->processor->shouldReceive('sanitizeValue')->andReturn('clean');
+    $this->processor->shouldReceive('translatePath')->andReturnArg(0);
     $this->state->shouldReceive('getNullables')->andReturn([]);
     $this->state->shouldReceive('isAutoSave')->andReturn(true);
     $this->state->shouldReceive('getRootModelId')->andReturn(456);
@@ -131,10 +159,10 @@ it('delete() delegates to handler when relation is provided', function () {
 
     $this->crudProcessor->shouldReceive('resolveRelation')->andReturn($relationObj);
 
-    $handler = Mockery::mock(RelationshipHandler::class);
-    $this->crudProcessor->shouldReceive('getHandler')->andReturn($handler);
+    $strategy = Mockery::mock(PersistenceStrategy::class);
+    $this->crudProcessor->shouldReceive('getStrategy')->andReturn($strategy);
 
-    $handler->shouldReceive('delete')->with($relationObj, $rootModel, 'tags', 789)->once();
+    $strategy->shouldReceive('delete')->with($relationObj, $rootModel, 'tags', 789)->once();
 
     $this->crudProcessor->delete('tags', 789);
 });
@@ -197,4 +225,99 @@ it('resolveRelation breaks on non-Model intermediate results and throws (covers 
     $this->expectException(LivewireAutoFormException::class);
 
     $method->invoke($this->crudProcessor, $rootModel, 'cities.nonexistent');
+});
+
+it('getRelationList() selects correct columns', function () {
+    $country = Country::create(['name' => 'Testland', 'code' => 'TL']);
+    City::create(['name' => 'City 1', 'country_id' => $country->id, 'population' => 1000]);
+    City::create(['name' => 'City 2', 'country_id' => $country->id, 'population' => 2000]);
+
+    $state = new FormCollection([]);
+    $state->setRootModel(Country::class, $country->id);
+
+    $resolver = new ModelResolver;
+    $processor = new DataProcessor;
+    $crudProcessor = new CrudProcessor($state, $resolver, $processor);
+
+    $rules = [
+        'cities.name' => 'required',
+        'cities.population' => 'integer',
+    ];
+
+    $list = $crudProcessor->getRelationList('cities', $rules);
+
+    expect($list)->toHaveCount(2);
+    expect($list[0]->getAttributes())->toHaveKey('id');
+    expect($list[0]->getAttributes())->toHaveKey('name');
+    expect($list[0]->getAttributes())->toHaveKey('population');
+    expect($list[0]->getAttributes())->not->toHaveKey('is_capital');
+});
+
+it('getRelationList() returns empty when no root class', function () {
+    $state = new FormCollection([]);
+    $resolver = new ModelResolver;
+    $processor = new DataProcessor;
+    $crudProcessor = new CrudProcessor($state, $resolver, $processor);
+
+    $list = $crudProcessor->getRelationList('cities', []);
+    expect($list)->toBeEmpty();
+});
+
+it('crud_processor_saves_explicit_json_column_without_casts', function () {
+    Schema::create('model_with_explicit_json', function (Blueprint $table) {
+        $table->id();
+        $table->json('meta')->nullable();
+        $table->timestamps();
+    });
+
+    $model = ModelWithExplicitJson::create(['meta' => json_encode(['old' => 'data'])]);
+    $state = new FormCollection;
+    $state->setRootModel(get_class($model), $model->id);
+    $state->setJsonColumns(['meta']);
+    $state->setAutoSave(true);
+
+    $processor = new CrudProcessor($state, new ModelResolver, new DataProcessor);
+
+    // Simulate updated form for 'meta.color'
+    $rules = [
+        'meta' => 'json_column',
+        'meta.color' => 'required',
+    ];
+
+    $result = $processor->updatedForm('meta.color', 'red', $rules);
+
+    expect($result)->toHaveKey('saved', true);
+    expect($result)->toHaveKey('cleanValue', 'red');
+
+    $model->refresh();
+    $meta = json_decode($model->meta, true);
+    expect($meta)->toBeArray();
+    expect($meta['color'])->toBe('red');
+    expect($meta['old'])->toBe('data');
+});
+
+it('crud_processor_saves_multiple_root_fields_including_json', function () {
+    Schema::create('model_with_json', function (Blueprint $table) {
+        $table->id();
+        $table->json('settings')->nullable();
+        $table->timestamps();
+    });
+
+    $model = ModelWithJson::create(['settings' => ['theme' => 'light']]);
+    $state = new FormCollection;
+    $state->setRootModel(get_class($model), $model->id);
+    $state->setJsonColumns(['settings']);
+
+    $processor = new CrudProcessor($state, new ModelResolver, new DataProcessor);
+
+    $allData = [
+        'settings.theme' => 'dark',
+        'settings.font' => 'sans',
+    ];
+
+    $processor->save($allData);
+
+    $model->refresh();
+    expect($model->settings['theme'])->toBe('dark');
+    expect($model->settings['font'])->toBe('sans');
 });

@@ -5,6 +5,7 @@ namespace SchenkeIo\LivewireAutoForm\Helpers;
 use ArrayAccess;
 use ArrayIterator;
 use Countable;
+use Illuminate\Support\Str;
 use IteratorAggregate;
 use Livewire\Wireable;
 use Traversable;
@@ -22,6 +23,7 @@ use Traversable;
  * - `rootModelClass`: The FQCN of the root Eloquent model.
  * - `rootModelId`: The ID of the root model instance.
  * - `nullables`: A list of fields that should convert empty strings to null.
+ * - `jsonColumns`: A list of fields identified as JSON columns.
  * - `autoSave`: Flag indicating if changes should be persisted immediately.
  *
  * Wireable Compliance:
@@ -37,6 +39,7 @@ use Traversable;
  * @property string|null $rootModelClass
  * @property int|string|null $rootModelId
  * @property array<int, string> $nullables
+ * @property array<int, string> $jsonColumns
  * @property bool $autoSave
  * @property array<string, mixed> $__system
  */
@@ -44,13 +47,14 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
 {
     public const string SYSTEM_KEY = '__system';
 
-    /** @var array{activeContext: string, activeId: int|string|null, rootModelClass: string|null, rootModelId: int|string|null, nullables: array<int, string>, autoSave: bool} */
+    /** @var array{activeContext: string, activeId: int|string|null, rootModelClass: string|null, rootModelId: int|string|null, nullables: array<int, string>, jsonColumns: array<int, string>, autoSave: bool} */
     public array $meta = [
         'activeContext' => '',
         'activeId' => null,
         'rootModelClass' => null,
         'rootModelId' => null,
         'nullables' => [],
+        'jsonColumns' => [],
         'autoSave' => false,
     ];
 
@@ -111,6 +115,27 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
     public function setNullables(array $nullables): void
     {
         $this->meta['nullables'] = $nullables;
+    }
+
+    /**
+     * @param  array<int, string>  $jsonColumns
+     */
+    public function setJsonColumns(array $jsonColumns): void
+    {
+        $this->meta['jsonColumns'] = $jsonColumns;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getJsonColumns(): array
+    {
+        return $this->meta['jsonColumns'];
+    }
+
+    public function isJsonColumn(string $column): bool
+    {
+        return in_array($column, $this->meta['jsonColumns']);
     }
 
     public function setActiveId(int|string|null $id): void
@@ -222,6 +247,7 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
             'rootModelClass' => $this->getRootModelClass(),
             'rootModelId' => $this->getRootModelId(),
             'nullables' => $this->getNullables(),
+            'jsonColumns' => $this->getJsonColumns(),
             'autoSave' => $this->isAutoSave(),
             default => $this->get($key),
         };
@@ -234,6 +260,7 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
             'activeId', 'rootModelId' => $this->getActiveId() !== null,
             'rootModelClass' => $this->getRootModelClass() !== null,
             'nullables' => $this->getNullables() !== [],
+            'jsonColumns' => $this->getJsonColumns() !== [],
             'autoSave' => true,
             default => isset($this->items[$key]),
         };
@@ -260,6 +287,7 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
             'rootModelClass' => $this->setRootModel($value, $this->getRootModelId()),
             'rootModelId' => $this->setRootModel($this->getRootModelClass(), $value),
             'nullables' => $this->setNullables($value),
+            'jsonColumns' => $this->setJsonColumns($value),
             'autoSave' => $this->setAutoSave($value),
             default => $this->put($key, $value),
         };
@@ -295,6 +323,25 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
         return new ArrayIterator($this->items);
     }
 
+    /**
+     * @param  array<string, mixed>  $rules
+     * @return array<string, mixed>
+     */
+    public static function getPrefixedRules(array $rules, string $propertyName): array
+    {
+        $prefixedRules = [];
+        foreach ($rules as $key => $value) {
+            $prefixedRules[self::getPrefixedField((string) $key, $propertyName)] = $value;
+        }
+
+        return $prefixedRules;
+    }
+
+    public static function getPrefixedField(string $field, string $propertyName): string
+    {
+        return str_starts_with($field, $propertyName.'.') ? $field : $propertyName.'.'.$field;
+    }
+
     public function setNested(string $key, mixed $value): void
     {
         if (str_starts_with($key, self::SYSTEM_KEY.'.')) {
@@ -307,9 +354,8 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
             return;
         }
 
-        $parts = explode('.', $key);
-        $firstKey = array_shift($parts);
-        $remainingKey = implode('.', $parts);
+        $firstKey = Str::before($key, '.');
+        $remainingKey = Str::after($key, '.');
 
         $data = $this->get($firstKey, []);
         if (! is_array($data)) {

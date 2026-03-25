@@ -1,6 +1,6 @@
 <?php
 
-namespace SchenkeIo\LivewireAutoForm\Helpers\RelationshipHandlers;
+namespace SchenkeIo\LivewireAutoForm\Strategies\Persistence;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -8,21 +8,7 @@ use Illuminate\Support\Str;
 use SchenkeIo\LivewireAutoForm\Helpers\DataProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 
-/**
- * Handler for BelongsToMany relationships.
- *
- * This implementation handles the persistence of Many-to-Many relationships,
- * including synchronization and pivot data management. It provides:
- * - **Pivot Management**: Automatically extracting and persisting pivot data
- *   (e.g., using `updateExistingPivot`).
- * - **Context-Aware Pivot Updates**: Handling individual field updates for
- *   pivot attributes when designated in the rule set.
- * - **Dynamic Attachment/Creation**: Intelligently deciding between attaching
- *   an existing record or creating a new related model.
- * - **Detachment Logic**: Correctly detaching records rather than deleting
- *   the target model during deletion operations.
- */
-class BelongsToManyHandler implements RelationshipHandler
+class BelongsToManyStrategy implements PersistenceStrategy
 {
     /**
      * @param  BelongsToMany<Model, Model>  $relation

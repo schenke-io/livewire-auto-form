@@ -7,6 +7,8 @@ use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 /**
  * Handles the internal form buffer and state management for the form.
  *
+ * @method void syncToDraftState()
+ *
  * This trait provides a centralized mechanism for managing the form's state,
  * abstracting the complexities of interacting with the `FormCollection` buffer.
  * It implements `ArrayAccess` and magic methods to allow the Component
@@ -32,6 +34,13 @@ trait HandlesFormState
      * The internal form buffer for form state and relationship management.
      */
     public FormCollection $form;
+
+    /**
+     * The flat state buffer for the UI to bind to.
+     *
+     * @var array<string, mixed>
+     */
+    public array $draftState = [];
 
     /**
      * Determines if changes are persisted immediately to the database.
@@ -97,6 +106,10 @@ trait HandlesFormState
             $this->{$offset} = $value;
         } else {
             $this->form->setNested($offset, $value);
+            /** @phpstan-ignore-next-line */
+            if (method_exists($this, 'syncToDraftState')) {
+                $this->syncToDraftState();
+            }
         }
     }
 
@@ -108,6 +121,10 @@ trait HandlesFormState
     public function offsetUnset(mixed $offset): void
     {
         $this->form->forget((string) $offset);
+        /** @phpstan-ignore-next-line */
+        if (method_exists($this, 'syncToDraftState')) {
+            $this->syncToDraftState();
+        }
     }
 
     /**

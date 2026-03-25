@@ -3,6 +3,7 @@
 namespace SchenkeIo\LivewireAutoForm\Traits;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
 use SchenkeIo\LivewireAutoForm\Helpers\ContextManager;
 use SchenkeIo\LivewireAutoForm\Helpers\CrudProcessor;
@@ -10,6 +11,7 @@ use SchenkeIo\LivewireAutoForm\Helpers\DataProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
 use SchenkeIo\LivewireAutoForm\Helpers\ModelResolver;
+use SchenkeIo\LivewireAutoForm\Helpers\PathResolver;
 
 /**
  * HasAutoForm is the core engine that powers the Livewire Auto Form package.
@@ -39,6 +41,31 @@ trait HasAutoForm
     use HandlesFormState, HandlesOptions, HandlesRelations;
 
     /**
+     * @var array<string, mixed>
+     */
+    protected array $cachedRules = [];
+
+    protected ?ModelResolver $modelResolver = null;
+
+    protected ?PathResolver $pathResolver = null;
+
+    /**
+     * Lazy-loads the PathResolver instance.
+     */
+    public function getPathResolver(): PathResolver
+    {
+        return $this->pathResolver ??= new PathResolver;
+    }
+
+    /**
+     * Returns a centralized instance of the ModelResolver.
+     */
+    protected function getModelResolver(): ModelResolver
+    {
+        return $this->modelResolver ??= new ModelResolver;
+    }
+
+    /**
      * Initializes the form state with a root Eloquent model.
      *
      * This method is typically called in the component's `mount()` method.
@@ -52,6 +79,7 @@ trait HasAutoForm
     public function setModel(?Model $model): void
     {
         $this->initializeHasAutoForm();
+        $this->clearRuleCache();
 
         if ($model === null) {
             throw LivewireAutoFormException::rootModelRequired(static::class);
@@ -71,6 +99,7 @@ trait HasAutoForm
         }
 
         $this->loadContext('', $id, true, $model);
+        $this->syncToDraftState();
     }
 
     /**
@@ -82,7 +111,11 @@ trait HasAutoForm
      */
     public function rules(): array
     {
-        return $this->scanInheritedRules();
+        if ($this->cachedRules !== []) {
+            return $this->cachedRules;
+        }
+
+        return $this->cachedRules = $this->scanInheritedRules();
     }
 
     /**
@@ -111,13 +144,10 @@ trait HasAutoForm
      */
     public function validate($rules = null, $messages = [], $attributes = []): array
     {
+        $this->syncFromDraftState();
         $rules = $rules ?? $this->rules();
         $propertyName = $this->getPropertyName();
-        $prefixedRules = [];
-        foreach ($rules as $key => $value) {
-            $prefixedKey = str_starts_with($key, $propertyName.'.') ? $key : $propertyName.'.'.$key;
-            $prefixedRules[$prefixedKey] = $value;
-        }
+        $prefixedRules = FormCollection::getPrefixedRules($rules, $propertyName);
 
         $data = [$propertyName => $this->form->all()];
         $validated = validator($data, $prefixedRules, $messages, $attributes)->validate();
@@ -145,13 +175,14 @@ trait HasAutoForm
      */
     public function validateOnly($field, $rules = null, $messages = [], $attributes = [], $dataOverrides = []): array
     {
+        $this->syncFromDraftState();
         $rules = $rules ?? $this->rules();
         $propertyName = $this->getPropertyName();
 
-        $prefixedField = str_starts_with($field, $propertyName.'.') ? $field : $propertyName.'.'.$field;
-        $fieldInRules = str_starts_with($field, $propertyName.'.') ? substr($field, strlen($propertyName) + 1) : $field;
+        $prefixedRules = FormCollection::getPrefixedRules($rules, $propertyName);
+        $prefixedField = FormCollection::getPrefixedField($field, $propertyName);
 
-        $rule = $rules[$field] ?? $rules[$prefixedField] ?? $rules[$fieldInRules] ?? 'nullable';
+        $rule = $prefixedRules[$prefixedField] ?? 'nullable';
         $singleRule = [$prefixedField => $rule];
 
         $validated = validator([$propertyName => $this->form->all()], $singleRule, $messages, $attributes)->validate();
@@ -198,6 +229,8 @@ trait HasAutoForm
      *
      * Discards any unsaved changes in the current context and switches
      * back to the main model editing view.
+     *
+     * @throws LivewireAutoFormException
      */
     public function cancel(): void
     {
@@ -211,10 +244,25 @@ trait HasAutoForm
      * needs to be refreshed.
      *
      * @param  Model  $model  The model instance to reload.
+     *
+     * @throws LivewireAutoFormException
      */
     public function reloadModel(Model $model): void
     {
+        $this->clearRuleCache();
         $this->loadContext('', $model->getKey());
+    }
+
+    /**
+     * Clears the internal rule cache.
+     *
+     * Call this method if you dynamically change the form structure
+     * (e.g. by modifying $ruleKeys) to ensure rules are re-scanned.
+     */
+    public function clearRuleCache(): void
+    {
+        $this->cachedRules = [];
+        PathResolver::clearCache();
     }
 
     // =========================================================================
@@ -222,19 +270,53 @@ trait HasAutoForm
     // =========================================================================
 
     /**
-     * Handles property updates and triggers auto-save logic if enabled.
-     *
-     * This hook is automatically called by Livewire when a property on the
-     * component is updated via `wire:model`. It manages the routing of
-     * updates to the buffer and, if `autoSave` is on, to the database.
-     *
-     * @param  string  $name  The full name of the updated property (e.g. 'form.name').
-     * @param  mixed  $value  The new value.
+     * Initializes the PathResolver and pre-resolves path mappings.
      *
      * @throws LivewireAutoFormException
      */
+    public function bootHasAutoForm(): void
+    {
+        if (isset($this->form) && $this->form->getRootModelClass()) {
+            try {
+                $model = $this->getModel();
+                if ($model) {
+                    foreach (array_keys($this->rules()) as $path) {
+                        $this->getPathResolver()->resolve($model, (string) $path);
+                    }
+                }
+            } catch (\Throwable) {
+                // Ignore if model can't be resolved during boot
+            }
+        }
+    }
+
+    /**
+     * Synchronizes the form collection to the flat draftState array.
+     *
+     * @throws LivewireAutoFormException
+     */
+    protected function syncToDraftState(): void
+    {
+        $this->draftState = Arr::dot($this->form->all());
+    }
+
+    protected function syncFromDraftState(?string $key = null, mixed $value = null): void
+    {
+        if ($key !== null) {
+            $this->form->setNested($key, $value);
+        } else {
+            foreach ($this->draftState as $k => $v) {
+                $this->form->setNested($k, $v);
+            }
+        }
+    }
+
     public function updated(string $name, mixed $value): void
     {
+        if (str_starts_with($name, 'draftState.')) {
+            return;
+        }
+
         $this->traitUpdated($name, $value);
     }
 
@@ -267,6 +349,7 @@ trait HasAutoForm
             $result = $this->getCrudProcessor()->updatedForm($key, $value, $this->rules());
 
             $this->form->setNested($key, $result['cleanValue']);
+            $this->draftState[$key] = $result['cleanValue'];
 
             if ($result['saved']) {
                 session()->flash('status', 'Saved successfully');
@@ -292,17 +375,22 @@ trait HasAutoForm
         $processor = new DataProcessor;
 
         $this->form->setNullables($processor->findNullables($rules));
+        $this->form->setJsonColumns($processor->findJsonColumns($rules));
 
-        (new ContextManager($this->form, new ModelResolver, $processor))
+        (new ContextManager($this->form, $this->getModelResolver(), $processor))
             ->loadContext($context, $id, $rules, $preserve, $model);
+
+        $this->syncToDraftState();
     }
 
     /**
      * Returns the root model instance with current form applied.
+     *
+     * @throws LivewireAutoFormException
      */
     public function getModel(): ?Model
     {
-        return (new ModelResolver)->resolve($this->form, '', $this->form->getRootModelId());
+        return $this->getModelResolver()->resolve($this->form, '', $this->form->getRootModelId());
     }
 
     /**
@@ -316,7 +404,7 @@ trait HasAutoForm
         $context = $this->form->getActiveContext();
         $id = $this->form->getActiveId();
 
-        return (new ModelResolver)->resolve(
+        return $this->getModelResolver()->resolve(
             $this->form,
             $context,
             $id,
@@ -329,7 +417,7 @@ trait HasAutoForm
      */
     protected function getCrudProcessor(): CrudProcessor
     {
-        return new CrudProcessor($this->form, new ModelResolver, new DataProcessor);
+        return new CrudProcessor($this->form, $this->getModelResolver(), new DataProcessor, $this->getPathResolver());
     }
 
     /**
@@ -339,7 +427,7 @@ trait HasAutoForm
      */
     public function resolveModelInstance(string $context, int|string|null $id): ?Model
     {
-        return (new ModelResolver)->resolve($this->form, $context, $id);
+        return $this->getModelResolver()->resolve($this->form, $context, $id);
     }
 
     /**
@@ -400,13 +488,13 @@ trait HasAutoForm
 
             // 1. Prioritize direct rule matching on the root model
             $rootModelRules = $this->getRulesFromModel($rootModel);
-            if (array_key_exists($key, $rootModelRules)) {
-                $rules[$key] = $this->ensureSometimesRule($rootModelRules[$key]);
+            if (Arr::has($rootModelRules, $key)) {
+                $rules[$key] = $this->ensureSometimesRule(Arr::get($rootModelRules, $key));
 
                 continue;
             }
 
-            if ($key === 'id') {
+            if ($key === $rootModel->getKeyName()) {
                 // to allow for creating a new record
                 $rules[$key] = 'nullable';
 
@@ -414,36 +502,27 @@ trait HasAutoForm
             }
 
             if (str_contains($key, '.')) {
-                // 2. Implement longest-prefix relationship resolution
-                $parts = explode('.', $key);
-                $found = false;
+                $pathInfo = $this->getPathResolver()->resolve($rootModel, $key);
 
-                // Iterate through the dotted parts to find the longest prefix that resolves to a valid relationship
-                for ($i = count($parts) - 1; $i > 0; $i--) {
-                    $relationPath = implode('.', array_slice($parts, 0, $i));
-                    $fieldName = implode('.', array_slice($parts, $i));
+                if ($pathInfo->relationChain !== []) {
+                    $relationPath = implode('.', $pathInfo->relationChain);
+                    $fieldName = $pathInfo->targetAttribute;
 
                     // try to resolve the related model
                     $relatedModel = $this->resolveModelInstance($relationPath, null);
                     if ($relatedModel) {
                         $modelRules = $this->getRulesFromModel($relatedModel);
-                        if (array_key_exists($fieldName, $modelRules)) {
-                            $rules[$key] = $this->ensureSometimesRule($modelRules[$fieldName]);
-                            $found = true;
+                        if (Arr::has($modelRules, $fieldName)) {
+                            $rules[$key] = $this->ensureSometimesRule(Arr::get($modelRules, $fieldName));
 
-                            break;
+                            continue;
                         }
-                        if ($fieldName === 'id') {
+                        if ($fieldName === $relatedModel->getKeyName()) {
                             $rules[$key] = 'nullable';
-                            $found = true;
 
-                            break;
+                            continue;
                         }
                     }
-                }
-
-                if ($found) {
-                    continue;
                 }
             }
 

@@ -3,6 +3,8 @@
 namespace SchenkeIo\LivewireAutoForm\Helpers;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 use Livewire\Wireable;
 use Stringable;
 
@@ -83,9 +85,7 @@ class DataProcessor
     {
         $allowedFields = [];
         foreach ($rules as $ruleKey => $rule) {
-            if (str_starts_with($ruleKey, 'form.')) {
-                $ruleKey = substr($ruleKey, 5);
-            }
+            $ruleKey = Str::after($ruleKey, 'form.');
 
             if ($context === '') {
                 // For root context, we allow:
@@ -93,23 +93,37 @@ class DataProcessor
                 // 2. Nested relationship fields: "cities.name"
                 // 3. Pivot fields: "pivot.status"
                 if (str_contains($ruleKey, '.')) {
-                    $parts = explode('.', $ruleKey);
-                    if ($model && $model->isRelation($parts[0])) {
+                    $firstPart = Str::before($ruleKey, '.');
+                    if ($model && $model->isRelation($firstPart)) {
                         continue;
                     }
                 }
                 $allowedFields[] = $ruleKey;
             } else {
                 if (str_starts_with($ruleKey, "$context.")) {
-                    $field = substr($ruleKey, strlen($context) + 1);
+                    $field = Str::after($ruleKey, "$context.");
                     $allowedFields[] = $field;
                 }
             }
         }
 
-        foreach ($this->findRelations($rules, $context, $model) as $relation) {
-            if ($relation !== 'pivot') {
-                $allowedFields[] = $relation.'_id';
+        foreach ($this->findRelations($rules, $context, $model) as $relationName) {
+            if ($relationName === 'pivot') {
+                continue;
+            }
+
+            if ($model) {
+                try {
+                    $relation = $model->{$relationName}();
+                    if ($relation instanceof BelongsTo) {
+                        $allowedFields[] = $relation->getForeignKeyName();
+                    }
+                } catch (\BadMethodCallException|\Error|\Exception) {
+                    // Ignore relations that are not methods
+                }
+            } else {
+                // Fallback if model is not provided
+                $allowedFields[] = $relationName.'_id';
             }
         }
 
@@ -164,21 +178,68 @@ class DataProcessor
     public function findNullables(array $rules): array
     {
         return collect($rules)
-            ->filter(function ($r) {
-                if (is_array($r)) {
-                    foreach ($r as $rule) {
-                        if (is_string($rule) && str_contains($rule, 'nullable')) {
-                            return true;
-                        }
-                    }
-
-                    return false;
-                }
-
-                return is_string($r) && str_contains($r, 'nullable');
-            })
+            ->filter(fn ($r) => collect((array) $r)
+                ->contains(fn ($rule) => is_string($rule) && str_contains($rule, 'nullable'))
+            )
             ->keys()
             ->toArray();
+    }
+
+    /**
+     * Identifies fields that are marked as JSON columns in the validation rules.
+     *
+     * Scans through the rules array (handling both pipe-separated strings and arrays)
+     * and returns the keys of any fields that contain the 'json_column' rule.
+     *
+     * @param  array<string, mixed>  $rules  The validation rules.
+     * @return array<int, string> The list of JSON column keys.
+     */
+    public function findJsonColumns(array $rules): array
+    {
+        return collect($rules)
+            ->filter(fn ($r) => collect((array) $r)
+                ->contains(fn ($rule) => is_string($rule) && str_contains($rule, 'json_column'))
+            )
+            ->keys()
+            ->toArray();
+    }
+
+    /**
+     * Translates dotted paths to JSON arrows (->) if the root part is a JSON column.
+     *
+     * Checks explicit declarations (from 'json_column' rule), the model's casts,
+     * and model's fillable attributes.
+     *
+     * @param  string  $path  The dotted path to translate.
+     * @param  array<int, string>  $jsonColumns  List of identified JSON columns.
+     * @param  Model|null  $model  Optional model instance to check for casts/fillable.
+     * @return string The translated path.
+     */
+    public function translatePath(string $path, array $jsonColumns, ?Model $model = null): string
+    {
+        // 1. Check explicit declarations
+        foreach ($jsonColumns as $jsonColumn) {
+            if ($path === $jsonColumn) {
+                return $path;
+            }
+            if (str_starts_with($path, $jsonColumn.'.')) {
+                $rest = substr($path, strlen($jsonColumn) + 1);
+
+                return $jsonColumn.'->'.str_replace('.', '->', $rest);
+            }
+        }
+
+        // 2. Check model casts or fillable
+        if ($model && str_contains($path, '.')) {
+            $rootPart = Str::before($path, '.');
+            if (array_key_exists($rootPart, $model->getCasts()) || $model->isFillable($rootPart)) {
+                $rest = Str::after($path, '.');
+
+                return $rootPart.'->'.str_replace('.', '->', $rest);
+            }
+        }
+
+        return $path;
     }
 
     /**
@@ -194,23 +255,18 @@ class DataProcessor
      */
     public function findRelations(array $rules, string $context = '', ?Model $model = null): array
     {
-        $relations = [];
-        $prefix = $context === '' ? '' : $context.'.';
-        foreach (array_keys($rules) as $ruleKey) {
-            $cleanKey = str_starts_with($ruleKey, 'form.') ? substr($ruleKey, 5) : $ruleKey;
-            if ($prefix !== '' && ! str_starts_with($cleanKey, $prefix)) {
-                continue;
-            }
-            $relativeKey = substr($cleanKey, strlen($prefix));
-            if (str_contains($relativeKey, '.')) {
-                $relationCandidate = explode('.', $relativeKey)[0];
-                if ($model && ! $model->isRelation($relationCandidate)) {
-                    continue;
-                }
-                $relations[] = $relationCandidate;
-            }
-        }
+        $jsonColumns = $this->findJsonColumns($rules);
 
-        return array_values(array_unique($relations));
+        return collect(array_keys($rules))
+            ->map(fn ($key) => Str::after($key, 'form.'))
+            ->filter(fn ($key) => $context === '' || Str::startsWith($key, "$context."))
+            ->map(fn ($key) => $context === '' ? $key : Str::after($key, "$context."))
+            ->filter(fn ($key) => str_contains($key, '.'))
+            ->map(fn ($key) => Str::before($key, '.'))
+            ->filter(fn ($rel) => ! in_array($rel, $jsonColumns))
+            ->filter(fn ($rel) => ! $model || $model->isRelation($rel))
+            ->unique()
+            ->values()
+            ->toArray();
     }
 }

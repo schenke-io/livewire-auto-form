@@ -8,10 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
-use SchenkeIo\LivewireAutoForm\Helpers\RelationshipHandlers\BelongsToHandler;
-use SchenkeIo\LivewireAutoForm\Helpers\RelationshipHandlers\BelongsToManyHandler;
-use SchenkeIo\LivewireAutoForm\Helpers\RelationshipHandlers\HasManyHandler;
-use SchenkeIo\LivewireAutoForm\Helpers\RelationshipHandlers\RelationshipHandler;
+use Illuminate\Support\Str;
+use SchenkeIo\LivewireAutoForm\Strategies\Persistence\PersistenceStrategy;
+use SchenkeIo\LivewireAutoForm\Strategies\Persistence\StrategyFactory;
 
 /**
  * CrudProcessor handles the persistence logic for root and related models.
@@ -34,11 +33,16 @@ use SchenkeIo\LivewireAutoForm\Helpers\RelationshipHandlers\RelationshipHandler;
  */
 class CrudProcessor
 {
+    protected PathResolver $pathResolver;
+
     public function __construct(
         public FormCollection $state,
         protected ModelResolver $resolver,
-        protected DataProcessor $processor
-    ) {}
+        protected DataProcessor $processor,
+        ?PathResolver $pathResolver = null
+    ) {
+        $this->pathResolver = $pathResolver ?? new PathResolver;
+    }
 
     /**
      * Persists the current $form form (Update or Create) to the database.
@@ -78,27 +82,24 @@ class CrudProcessor
 
         foreach ($allData as $key => $value) {
             $key = (string) $key;
-            $realKey = $key;
-            if (str_contains($key, '.')) {
-                $parts = explode('.', $key);
-                $firstPart = $parts[0];
-                if ($root->isRelation($firstPart)) {
-                    continue;
-                }
-                if ($root->isFillable($firstPart) || array_key_exists($firstPart, $root->getCasts())) {
-                    $realKey = str_replace('.', '->', $key);
-                } else {
-                    continue;
-                }
-            } elseif ($root->isRelation($key)) {
-                if (is_array($value)) {
-                    $relationsData[$key] = $value;
+            $pathInfo = $this->pathResolver->resolve($root, $key);
+
+            if ($pathInfo->relationChain !== []) {
+                if (count($pathInfo->relationChain) === 1 && $pathInfo->targetAttribute === '') {
+                    $relationsData[$pathInfo->relationChain[0]] = $value;
                 }
 
                 continue;
-            } elseif (property_exists($this->state, $key) || ! $root->isFillable($key)) {
-                continue;
             }
+
+            $firstPart = Str::before($pathInfo->targetAttribute, '.');
+            if (property_exists($this->state, $key) || ! $root->isFillable($firstPart)) {
+                if (! array_key_exists($firstPart, $root->getCasts())) {
+                    continue;
+                }
+            }
+
+            $realKey = $this->processor->translatePath($pathInfo->targetAttribute, $this->state->getJsonColumns(), $root);
             $rootData[$realKey] = $this->processor->sanitizeValue($key, $value, $this->state->getNullables());
         }
 
@@ -116,43 +117,26 @@ class CrudProcessor
         // 2. Fallback: check all form for any potential BelongsTo foreign keys
         foreach ($allData as $key => $val) {
             $key = (string) $key;
-            $context = '';
-            $field = '';
-            if (str_contains($key, '.')) {
-                /*
-                 * Background: When saving the root model, we might encounter keys in dot notation.
-                 * This happens if the form source is flattened or if custom inputs are used.
-                 * By splitting the key, we can identify if the first part corresponds to a
-                 * relationship (like 'city.id'), which allows us to specifically handle
-                 * foreign key updates on the root model for BelongsTo relationships.
-                 */
-                [$context, $field] = explode('.', $key, 2);
-            } elseif ($root->isRelation($key)) {
-                $context = $key;
-                $field = 'id';
-            }
+            $pathInfo = $this->pathResolver->resolve($root, $key);
 
-            if ($context && $root->isRelation($context)) {
-                try {
-                    $relation = $root->{$context}();
-                    if ($relation instanceof BelongsTo) {
-                        $idKey = $relation->getRelated()->getKeyName();
-                        if ($field === $idKey) {
-                            $finalVal = is_array($val) ? ($val[$idKey] ?? null) : $val;
-                            if ($finalVal !== null) {
-                                $rootData[$relation->getForeignKeyName()] = $finalVal;
+            if ($pathInfo->relationChain !== []) {
+                $context = $pathInfo->relationChain[0];
+                $field = $pathInfo->targetAttribute;
+                // only direct relations are considered for BelongsTo updates on the root model
+                if (count($pathInfo->relationChain) === 1 && $root->isRelation($context)) {
+                    try {
+                        $relation = $root->{$context}();
+                        if ($relation instanceof BelongsTo) {
+                            $idKey = $relation->getRelated()->getKeyName();
+                            if ($field === '' || $field === $idKey) {
+                                $finalVal = is_array($val) ? ($val[$idKey] ?? null) : $val;
+                                if ($finalVal !== null) {
+                                    $rootData[$relation->getForeignKeyName()] = $finalVal;
+                                }
                             }
                         }
+                    } catch (\Throwable $e) {
                     }
-                } catch (\Throwable $e) {
-                    /*
-                     * Background: This is a best-effort discovery phase for relationship-based fields.
-                     * We try to invoke the $context as a method on the model to see if it's a relation.
-                     * This might fail if the method is not a relation, or if there are logic errors
-                     * within the model's relation method. We catch and ignore all exceptions here
-                     * because this is just one of several ways we try to find foreign keys; if this
-                     * way fails, we simply move on to the next field in the form set.
-                     */
                 }
             }
         }
@@ -178,7 +162,7 @@ class CrudProcessor
             // Check if we have flat form like 'brands.name'
             foreach ($allData as $key => $value) {
                 $key = (string) $key;
-                if (str_starts_with($key, "$context.")) {
+                if (Str::startsWith($key, "$context.")) {
                     /*
                      * Background: This block handles form that has been flattened into a single-level array
                      * where keys are prefixed with the context name (e.g., 'brands.name'). This is common
@@ -186,7 +170,7 @@ class CrudProcessor
                      * We use data_set() to correctly reconstruct the nested array structure expected by the
                      * CRUD processor for the related model, ensuring that 'brands.name' becomes $form['name'].
                      */
-                    data_set($data, substr($key, strlen($context) + 1), $value);
+                    data_set($data, Str::after($key, "$context."), $value);
                 }
             }
         }
@@ -200,10 +184,10 @@ class CrudProcessor
         }
 
         $relation = $this->resolveRelation($root, $context);
-        $handler = $this->getHandler($relation);
+        $strategy = $this->getStrategy($relation);
 
-        if ($handler) {
-            $handler->save($relation, $root, $context, $id, $data, $this->state);
+        if ($strategy) {
+            $strategy->save($relation, $root, $context, $id, $data, $this->state);
         } else {
             $model = $this->resolver->resolve($this->state, $context, $id);
             $model?->update($data);
@@ -239,8 +223,8 @@ class CrudProcessor
 
         // Determine realKey (field name within context)
         $realKey = (string) $key;
-        if ($context !== '' && str_starts_with((string) $key, "$context.")) {
-            $realKey = substr((string) $key, strlen((string) $context) + 1);
+        if ($context !== '' && Str::startsWith((string) $key, "$context.")) {
+            $realKey = Str::after((string) $key, "$context.");
         }
 
         $model = $this->resolver->resolve($this->state, (string) $context, $id);
@@ -250,22 +234,16 @@ class CrudProcessor
 
         try {
             $relation = $this->resolveRelation($root, (string) $context);
-            $handler = $this->getHandler($relation);
+            $strategy = $this->getStrategy($relation);
 
-            if ($handler && $handler->updateField($relation, $root, (string) $context, $id, $realKey, $cleanValue, $this->state, $this->processor, $rules)) {
+            if ($strategy && $strategy->updateField($relation, $root, (string) $context, $id, $realKey, $cleanValue, $this->state, $this->processor, $rules)) {
                 return ['cleanValue' => $cleanValue, 'saved' => true, 'context' => (string) $context, 'id' => $this->state->getActiveId()];
             }
         } catch (\BadMethodCallException|LivewireAutoFormException $e) {
             // fall through to standard field update
         }
 
-        if (str_contains($realKey, '.')) {
-            $parts = explode('.', $realKey);
-            $firstPart = $parts[0];
-            if ($model->isFillable($firstPart) || array_key_exists($firstPart, $model->getCasts())) {
-                $realKey = str_replace('.', '->', $realKey);
-            }
-        }
+        $realKey = $this->processor->translatePath($realKey, $this->state->getJsonColumns(), $model);
         $model->forceFill([$realKey => $cleanValue])->save();
         $model->refresh();
 
@@ -311,10 +289,10 @@ class CrudProcessor
             return;
         }
         $rel = $this->resolveRelation($root, $relation);
-        $handler = $this->getHandler($rel);
+        $strategy = $this->getStrategy($rel);
 
-        if ($handler) {
-            $handler->delete($rel, $root, $relation, $id);
+        if ($strategy) {
+            $strategy->delete($rel, $root, $relation, $id);
         }
     }
 
@@ -343,16 +321,14 @@ class CrudProcessor
             $tableName = $relatedModel->getTable();
             $idColumn = $relatedModel->getKeyName();
 
-            $selectColumns = [$idColumn];
-            foreach (array_keys($rules) as $ruleKey) {
-                if (str_starts_with($ruleKey, "$relation.")) {
-                    $field = substr($ruleKey, strlen($relation) + 1);
-                    if (! str_contains($field, '.')) {
-                        $selectColumns[] = $field;
-                    }
-                }
-            }
-            $selectColumns = array_unique($selectColumns);
+            $selectColumns = collect(array_keys($rules))
+                ->filter(fn ($ruleKey) => Str::startsWith((string) $ruleKey, "$relation."))
+                ->map(fn ($ruleKey) => Str::after((string) $ruleKey, "$relation."))
+                ->filter(fn ($field) => ! str_contains($field, '.'))
+                ->merge([$idColumn])
+                ->unique()
+                ->values()
+                ->toArray();
 
             $qualifiedColumns = array_map(function ($column) use ($tableName) {
                 return str_contains($column, '.') ? $column : "$tableName.$column";
@@ -367,16 +343,11 @@ class CrudProcessor
     }
 
     /**
-     * Factory for relationship handlers based on the relationship type.
+     * Factory for persistence strategies based on the relationship type.
      */
-    protected function getHandler(mixed $relation): ?RelationshipHandler
+    protected function getStrategy(mixed $relation): ?PersistenceStrategy
     {
-        return match (true) {
-            $relation instanceof BelongsToMany => new BelongsToManyHandler,
-            $relation instanceof HasMany, $relation instanceof MorphMany => new HasManyHandler,
-            $relation instanceof BelongsTo => new BelongsToHandler,
-            default => null,
-        };
+        return StrategyFactory::make($relation);
     }
 
     /**
@@ -390,23 +361,31 @@ class CrudProcessor
      */
     protected function resolveRelation(Model $root, string $context): mixed
     {
-        $parts = explode('.', $context);
-        $current = $root;
+        $pathInfo = $this->pathResolver->resolve($root, $context);
+        $chain = $pathInfo->relationChain;
+        $attribute = $pathInfo->targetAttribute;
 
-        foreach ($parts as $index => $part) {
-            if (! $current->isRelation($part)) {
-                break;
-            }
-            if ($index === count($parts) - 1) {
-                return $current->{$part}();
-            }
+        // The relationship method we want is either the attribute (if it's a relation)
+        // or the last part of the relation chain.
+        $relationMethod = ($attribute !== '') ? $attribute : array_pop($chain);
 
-            $current = $current->{$part};
-            if (! $current instanceof Model) {
-                break;
-            }
+        if (! $relationMethod) {
+            throw LivewireAutoFormException::relationDoesNotExist($context, get_class($root), self::class);
         }
 
-        throw LivewireAutoFormException::relationDoesNotExist($context, get_class($root), self::class);
+        $current = collect($chain)->reduce(function ($carry, $part) use ($context, $root) {
+            $next = $carry->{$part};
+            if (! $next instanceof Model) {
+                throw LivewireAutoFormException::relationDoesNotExist($context, get_class($root), self::class);
+            }
+
+            return $next;
+        }, $root);
+
+        try {
+            return $current->{$relationMethod}();
+        } catch (\BadMethodCallException|\Error $e) {
+            throw LivewireAutoFormException::relationDoesNotExist($context, get_class($root), self::class);
+        }
     }
 }

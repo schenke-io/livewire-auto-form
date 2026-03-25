@@ -1,4 +1,4 @@
-# Concept of Coding
+# Core Concepts
 
 Livewire Auto Form follows a **buffer-based state management** pattern. Instead of binding Livewire properties directly to Eloquent model attributes, it uses an internal `$form` object (an instance of `FormCollection`) to safely stage changes.
 

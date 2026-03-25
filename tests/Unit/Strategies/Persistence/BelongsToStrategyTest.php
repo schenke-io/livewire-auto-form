@@ -1,16 +1,16 @@
 <?php
 
-namespace Tests\Unit\Helpers\RelationshipHandlers;
+namespace Tests\Unit\Strategies\Persistence;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Mockery;
 use SchenkeIo\LivewireAutoForm\Helpers\DataProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
-use SchenkeIo\LivewireAutoForm\Helpers\RelationshipHandlers\BelongsToHandler;
+use SchenkeIo\LivewireAutoForm\Strategies\Persistence\BelongsToStrategy;
 
 it('saves belongsTo by updating existing related model', function () {
-    $handler = new BelongsToHandler;
+    $strategy = new BelongsToStrategy;
     $relation = Mockery::mock(BelongsTo::class);
     $root = Mockery::mock(Model::class);
     $state = Mockery::mock(FormCollection::class);
@@ -25,11 +25,11 @@ it('saves belongsTo by updating existing related model', function () {
     $relatedClass->shouldReceive('find')->with(1)->andReturn($related);
     $related->shouldReceive('update')->with($data)->once();
 
-    $handler->save($relation, $root, 'address', 1, $data, $state);
+    $strategy->save($relation, $root, 'address', 1, $data, $state);
 });
 
 it('saves belongsTo by switching to a different existing model', function () {
-    $handler = new BelongsToHandler;
+    $strategy = new BelongsToStrategy;
     $relation = Mockery::mock(BelongsTo::class);
     $root = Mockery::mock(Model::class);
     $state = Mockery::mock(FormCollection::class);
@@ -49,11 +49,11 @@ it('saves belongsTo by switching to a different existing model', function () {
     $root->shouldReceive('save')->once();
     $newRelated->shouldReceive('update')->with($data)->once();
 
-    $handler->save($relation, $root, 'address', 1, $data, $state);
+    $strategy->save($relation, $root, 'address', 1, $data, $state);
 });
 
 it('updates field in belongsTo when ID changes', function () {
-    $handler = new BelongsToHandler;
+    $strategy = new BelongsToStrategy;
     $relation = Mockery::mock(BelongsTo::class);
     $root = Mockery::mock(Model::class);
     $state = Mockery::mock(FormCollection::class);
@@ -73,17 +73,17 @@ it('updates field in belongsTo when ID changes', function () {
     $processor->shouldReceive('extractFilteredData')->andReturn(['id' => 3, 'name' => 'X'])->once();
     $state->shouldReceive('put')->with('address', ['id' => 3, 'name' => 'X'])->once();
 
-    $result = $handler->updateField($relation, $root, 'address', 1, 'id', 3, $state, $processor, []);
+    $result = $strategy->updateField($relation, $root, 'address', 1, 'id', 3, $state, $processor, []);
     expect($result)->toBeTrue();
 });
 
 it('deletes belongsTo by setting foreign key to null', function () {
-    $handler = new BelongsToHandler;
+    $strategy = new BelongsToStrategy;
     $relation = Mockery::mock(BelongsTo::class);
     $root = Mockery::mock(Model::class);
 
     $relation->shouldReceive('getForeignKeyName')->andReturn('address_id');
     $root->shouldReceive('update')->with(['address_id' => null])->once();
 
-    $handler->delete($relation, $root, 'address', 1);
+    $strategy->delete($relation, $root, 'address', 1);
 });

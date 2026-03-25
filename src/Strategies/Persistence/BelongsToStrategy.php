@@ -1,29 +1,16 @@
 <?php
 
-namespace SchenkeIo\LivewireAutoForm\Helpers\RelationshipHandlers;
+namespace SchenkeIo\LivewireAutoForm\Strategies\Persistence;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use SchenkeIo\LivewireAutoForm\Helpers\DataProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 
-/**
- * Handler for BelongsTo relationships.
- *
- * This implementation manages the "inverse" side of Eloquent relationships.
- * It is primarily responsible for:
- * - **Foreign Key Synchronization**: Automatically updating the root model's
- *   foreign key when the associated record is changed in the buffer.
- * - **Nested Data Persistence**: Applying updates to the related model instance.
- * - **Relationship Dissociation**: Correctly handling the 'delete' operation
- *   by nullifying the foreign key on the root model rather than deleting
- *   the target record.
- */
-class BelongsToHandler implements RelationshipHandler
+class BelongsToStrategy implements PersistenceStrategy
 {
     /**
      * @param  BelongsTo<Model, Model>  $relation
-     * @param  array<string, mixed>  $data
      */
     public function save(mixed $relation, Model $root, string $context, int|string|null $id, array $data, FormCollection $state): void
     {

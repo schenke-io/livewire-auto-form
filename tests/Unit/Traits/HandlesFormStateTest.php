@@ -81,6 +81,25 @@ class HandlesFormStateTest extends TestCase
         $this->assertFalse($this->testClass->form->has('name'));
     }
 
+    public function test_offset_unset_calls_sync_to_draft_state()
+    {
+        $obj = new class implements \ArrayAccess
+        {
+            use HandlesFormState;
+
+            public bool $synced = false;
+
+            public function syncToDraftState()
+            {
+                $this->synced = true;
+            }
+        };
+        $obj->bootHandlesFormState();
+        $obj->form->put('name', 'John');
+        unset($obj['name']);
+        $this->assertTrue($obj->synced);
+    }
+
     public function test_all_returns_everything()
     {
         $this->testClass->form->put('name', 'John');

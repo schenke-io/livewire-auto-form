@@ -10,6 +10,7 @@ use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
  * Handles relationship management logic for the form.
  *
  * @method void cancel()
+ * @method void clearRuleCache()
  * @method mixed getComponent()
  * @method void guardDirtyBuffer()
  * @method \SchenkeIo\LivewireAutoForm\Helpers\CrudProcessor getCrudProcessor()
@@ -71,6 +72,9 @@ trait HandlesRelations
      */
     public function add(string $relation): void
     {
+        if ($relation === '') {
+            $this->clearRuleCache();
+        }
         $this->guardDirtyBuffer();
         $this->ensureRelationAllowed($relation);
         $this->loadContext($relation, null);
