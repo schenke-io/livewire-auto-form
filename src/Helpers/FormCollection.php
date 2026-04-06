@@ -94,6 +94,9 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
         return $instance;
     }
 
+    /**
+     * Set the current editing context and active ID.
+     */
     public function setContext(string $context, int|string|null $id): void
     {
         $this->meta['activeContext'] = $context;
@@ -103,6 +106,9 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
         }
     }
 
+    /**
+     * Set the root model class and ID.
+     */
     public function setRootModel(?string $class, int|string|null $id): void
     {
         $this->meta['rootModelClass'] = $class;
@@ -110,6 +116,8 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
     }
 
     /**
+     * Set the list of fields that should be nullable.
+     *
      * @param  array<int, string>  $nullables
      */
     public function setNullables(array $nullables): void
@@ -118,6 +126,8 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
     }
 
     /**
+     * Set the list of fields that are JSON columns.
+     *
      * @param  array<int, string>  $jsonColumns
      */
     public function setJsonColumns(array $jsonColumns): void
@@ -126,6 +136,8 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
     }
 
     /**
+     * Get the list of JSON columns.
+     *
      * @return array<int, string>
      */
     public function getJsonColumns(): array
@@ -133,47 +145,73 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
         return $this->meta['jsonColumns'];
     }
 
+    /**
+     * Check if a column is a JSON column.
+     */
     public function isJsonColumn(string $column): bool
     {
         return in_array($column, $this->meta['jsonColumns']);
     }
 
+    /**
+     * Set the ID of the record being edited in the active context.
+     */
     public function setActiveId(int|string|null $id): void
     {
         $this->meta['activeId'] = $id;
     }
 
+    /**
+     * Clear all form data (items), preserving meta-data.
+     */
     public function clearData(): void
     {
         $this->items = [];
     }
 
+    /**
+     * Check if the current context is the root model.
+     */
     public function isRoot(): bool
     {
         return $this->meta['activeContext'] === '';
     }
 
+    /**
+     * Get the current active context.
+     */
     public function getActiveContext(): string
     {
         return $this->meta['activeContext'];
     }
 
+    /**
+     * Get the ID of the record being edited in the active context.
+     */
     public function getActiveId(): int|string|null
     {
         return $this->meta['activeId'];
     }
 
+    /**
+     * Get the root model class name.
+     */
     public function getRootModelClass(): ?string
     {
         return $this->meta['rootModelClass'];
     }
 
+    /**
+     * Get the root model ID.
+     */
     public function getRootModelId(): int|string|null
     {
         return $this->meta['rootModelId'];
     }
 
     /**
+     * Get the list of nullable fields.
+     *
      * @return array<int, string>
      */
     public function getNullables(): array
@@ -181,17 +219,25 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
         return $this->meta['nullables'];
     }
 
+    /**
+     * Check if auto-save is enabled.
+     */
     public function isAutoSave(): bool
     {
         return $this->meta['autoSave'];
     }
 
+    /**
+     * Set the auto-save flag.
+     */
     public function setAutoSave(bool $autoSave): void
     {
         $this->meta['autoSave'] = $autoSave;
     }
 
     /**
+     * Get all form data items.
+     *
      * @return array<string, mixed>
      */
     public function all(): array
@@ -207,16 +253,25 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
         return $this->items;
     }
 
+    /**
+     * Check if a key exists in the collection items.
+     */
     public function has(string|int $key): bool
     {
         return array_key_exists((string) $key, $this->items);
     }
 
+    /**
+     * Get an item from the collection.
+     */
     public function get(string|int $key, mixed $default = null): mixed
     {
         return array_key_exists((string) $key, $this->items) ? $this->items[(string) $key] : $default;
     }
 
+    /**
+     * Put an item into the collection.
+     */
     public function put(string|int $key, mixed $value): self
     {
         if ($key === self::SYSTEM_KEY) {
@@ -228,6 +283,8 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
     }
 
     /**
+     * Remove one or more items from the collection.
+     *
      * @param  string|int|array<int, string|int>  $keys
      */
     public function forget(string|int|array $keys): self
@@ -239,6 +296,9 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
         return $this;
     }
 
+    /**
+     * Magic getter for meta-data and items.
+     */
     public function __get(string $key): mixed
     {
         return match ($key) {
@@ -268,6 +328,9 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
 
     /**
      * @throws LivewireAutoFormException
+     */
+    /**
+     * Magic setter for meta-data and items. Supports dotted keys for nested items.
      */
     public function __set(string $key, mixed $value): void
     {
@@ -324,7 +387,10 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
     }
 
     /**
+     * Helper to prefix all rule keys with a property name (e.g., 'form.').
+     *
      * @param  array<string, mixed>  $rules
+     * @param  string  $propertyName  The property name to prefix with (e.g., 'form').
      * @return array<string, mixed>
      */
     public static function getPrefixedRules(array $rules, string $propertyName): array
@@ -337,11 +403,17 @@ class FormCollection implements ArrayAccess, Countable, IteratorAggregate, Wirea
         return $prefixedRules;
     }
 
+    /**
+     * Helper to prefix a single field key with a property name.
+     */
     public static function getPrefixedField(string $field, string $propertyName): string
     {
         return str_starts_with($field, $propertyName.'.') ? $field : $propertyName.'.'.$field;
     }
 
+    /**
+     * Set a value in the items array using a dotted path.
+     */
     public function setNested(string $key, mixed $value): void
     {
         if (str_starts_with($key, self::SYSTEM_KEY.'.')) {

@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 use SchenkeIo\LivewireAutoForm\AutoFormOptions;
 use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
 
+/**
+ * Class EloquentOptionsAdapter
+ *
+ * Resolves options from an Eloquent model.
+ */
 class EloquentOptionsAdapter extends BaseOptionsAdapter
 {
     /**
@@ -13,6 +18,15 @@ class EloquentOptionsAdapter extends BaseOptionsAdapter
      */
     public function __construct(protected string $modelClass) {}
 
+    /**
+     * Resolve options from database records.
+     *
+     * @param  string|null  $labelMask  A column name or mask like "(id) - (name)".
+     * @param  string|null  $origin  Origin context for error reporting.
+     * @return array<int, array{0: string|int, 1: string}>
+     *
+     * @throws LivewireAutoFormException If the mask syntax is invalid.
+     */
     public function getOptions(?string $labelMask = null, ?string $origin = null): array
     {
         if (is_subclass_of($this->modelClass, AutoFormOptions::class)) {

@@ -7,10 +7,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use SchenkeIo\LivewireAutoForm\Helpers\DataProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 
+/**
+ * Class BelongsToStrategy
+ *
+ * Handles persistence for BelongsTo relationships.
+ */
 class BelongsToStrategy implements PersistenceStrategy
 {
     /**
+     * Update the related model and the root model's foreign key.
+     *
      * @param  BelongsTo<Model, Model>  $relation
+     * @param  array<string, mixed>  $data
      */
     public function save(mixed $relation, Model $root, string $context, int|string|null $id, array $data, FormCollection $state): void
     {
@@ -37,6 +45,8 @@ class BelongsToStrategy implements PersistenceStrategy
     }
 
     /**
+     * Handle auto-save for the foreign key field.
+     *
      * @param  BelongsTo<Model, Model>  $relation
      * @param  array<string, mixed>  $rules
      */
@@ -58,6 +68,8 @@ class BelongsToStrategy implements PersistenceStrategy
     }
 
     /**
+     * Disassociate the relationship by setting the foreign key to null.
+     *
      * @param  BelongsTo<Model, Model>  $relation
      */
     public function delete(mixed $relation, Model $root, string $context, int|string|null $id): void

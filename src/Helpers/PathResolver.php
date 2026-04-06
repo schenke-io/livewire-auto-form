@@ -7,14 +7,24 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
 use SchenkeIo\LivewireAutoForm\Data\PathInfo;
 
+/**
+ * Class PathResolver
+ *
+ * Resolves dotted property paths into their constituent relationships and attributes.
+ */
 class PathResolver
 {
-    /** @var array<string, PathInfo> */
+    /** @var array<string, PathInfo> Static cache for resolved paths. */
     protected static array $cache = [];
 
     /**
-     * Resolves a dotted path (e.g. 'user.profile.name') into a PathInfo DTO
-     * which separates relations from the final attribute.
+     * Resolves a dotted path (e.g., 'user.profile.name') into a PathInfo DTO.
+     *
+     * It separates the chain of relationships from the final attribute on the target model.
+     *
+     * @param  Model  $root  The root Eloquent model.
+     * @param  string  $path  The dotted path to resolve.
+     * @return PathInfo The resolved path details.
      */
     public function resolve(Model $root, string $path): PathInfo
     {
@@ -72,7 +82,9 @@ class PathResolver
     }
 
     /**
-     * Clear the static cache
+     * Clear the static cache.
+     *
+     * Useful for testing or when the model structure might have changed dynamically.
      */
     public static function clearCache(): void
     {

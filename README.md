@@ -198,6 +198,8 @@ The package's "Single Buffer" architecture ensures that when you save, the entir
   * [View Actions (Public Interface)](#view-actions-public-interface)
     * [`edit(string $relation, int|string $id)`](#edit-string-relation-int-string-id)
     * [`add(string $relation)`](#add-string-relation)
+    * [`optionsFor(string $key, ?string $labelMask = null)`](#optionsfor-string-key-string-labelmask-null)
+    * [`scanInheritedRules(array $rules = [])`](#scaninheritedrules-array-rules)
     * [`save()`](#save)
     * [`cancel()`](#cancel)
     * [`delete(string $relation, int|string $id)`](#delete-string-relation-int-string-id)
@@ -749,6 +751,7 @@ See the [Multi-Step Wizards](wizard.md) guide for details.
 | `isLastStep()` | Returns `true` if on the final step. |
 | `getSteps()` | Returns the list of defined step views. |
 | `isStepActive(int $index)` | Checks if a step is currently active. |
+| `getStepFields(int $index)` | Returns the fields associated with a specific step. |
 
 ## <a name="public-properties-autoform"></a>Public Properties (AutoForm)
 
@@ -780,6 +783,15 @@ Switches the context to edit a record.
 Switches the context to "Add Mode".
 - **Related record**: `wire:click="add('posts')"`
 - **New root model**: `wire:click="add('')"`
+
+### <a name="optionsfor-string-key-string-labelmask-null"></a>`optionsFor(string $key, ?string $labelMask = null)`
+Generates option arrays for selects based on Enums or Eloquent relations.
+- **$key**: The field name or relation name.
+- **$labelMask**: Optional mask for labels (e.g., `(first_name) (last_name)`).
+
+### <a name="scaninheritedrules-array-rules"></a>`scanInheritedRules(array $rules = [])`
+Automatically scans the model and its relations for validation rules defined in `rules()` or `casts()`.
+- **$rules**: Optional base rules to merge with.
 
 ### <a name="save"></a>`save()`
 Validates and persists the current buffer data.
@@ -828,7 +840,7 @@ Scans for rules from the active model and its relationships. This is used by the
 
 Returns the merged rules array.
 
-**Strict Validation**: If a key in `ruleKeys()` cannot be resolved on the active model or if a relationship path is invalid, a `LivewireAutoFormException` is thrown.
+**Validation Flexibility**: If a key in `ruleKeys()` cannot be resolved on the active model or if a relationship path is invalid, it defaults to `nullable` instead of throwing an exception. This allows for quick prototyping and optional fields.
 
 ### <a name="optionsfor-string-key-string-labelmask-null"></a>`optionsFor(string $key, ?string $labelMask = null)`
 Universal helper for fetching [value => label] pairs for selection elements (selects, radios, checkboxes).

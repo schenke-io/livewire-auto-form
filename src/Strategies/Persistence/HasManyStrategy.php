@@ -8,10 +8,18 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use SchenkeIo\LivewireAutoForm\Helpers\DataProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 
+/**
+ * Class HasManyStrategy
+ *
+ * Handles persistence for HasMany and MorphMany relationships.
+ */
 class HasManyStrategy implements PersistenceStrategy
 {
     /**
+     * Create or update a related model in the collection.
+     *
      * @param  HasMany<Model, Model>|MorphMany<Model, Model>  $relation
+     * @param  array<string, mixed>  $data
      */
     public function save(mixed $relation, Model $root, string $context, int|string|null $id, array $data, FormCollection $state): void
     {
@@ -26,6 +34,8 @@ class HasManyStrategy implements PersistenceStrategy
     }
 
     /**
+     * Auto-save is not directly supported for HasMany collections via this strategy.
+     *
      * @param  HasMany<Model, Model>|MorphMany<Model, Model>  $relation
      * @param  array<string, mixed>  $rules
      */
@@ -35,6 +45,8 @@ class HasManyStrategy implements PersistenceStrategy
     }
 
     /**
+     * Delete the related model from the database.
+     *
      * @param  HasMany<Model, Model>|MorphMany<Model, Model>  $relation
      */
     public function delete(mixed $relation, Model $root, string $context, int|string|null $id): void

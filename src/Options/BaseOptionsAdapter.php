@@ -2,13 +2,20 @@
 
 namespace SchenkeIo\LivewireAutoForm\Options;
 
+/**
+ * Abstract class BaseOptionsAdapter
+ *
+ * Provides common functionality for mapping raw options into the standard [value, label, icon?] format.
+ */
 abstract class BaseOptionsAdapter implements OptionsResolver
 {
     /**
      * Maps an associative array of options to the format expected by the frontend.
      *
+     * Handles simple scalar options, icon-based options, and structured arrays with keys/replacements.
+     *
      * @param  array<string|int, string|array<string|int, mixed>>  $options
-     * @return array<int, array{0: string|int, 1: string}>
+     * @return array<int, array{0: string|int, 1: string, 2?: string}>
      */
     protected function mapOptions(array $options): array
     {

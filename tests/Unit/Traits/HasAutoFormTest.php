@@ -532,7 +532,7 @@ class HasAutoFormTest extends TestCase
         $this->assertEquals(['name' => 'nullable'], $rules);
     }
 
-    public function test_scan_inherited_rules_throws_on_unknown_root_key()
+    public function test_scan_inherited_rules_defaults_on_unknown_root_key()
     {
         $model = new class extends Model
         {
@@ -545,12 +545,11 @@ class HasAutoFormTest extends TestCase
         $component = $this->getScanRulesComponent($model);
         $component->setTestRuleKeys(['unknown']);
 
-        $this->expectException(LivewireAutoFormException::class);
-        $this->expectExceptionMessage("Rule key 'unknown' could not be resolved");
-        $component->callScanInheritedRules();
+        $rules = $component->callScanInheritedRules();
+        $this->assertEquals(['unknown' => 'nullable'], $rules);
     }
 
-    public function test_scan_inherited_rules_throws_on_unknown_relation()
+    public function test_scan_inherited_rules_defaults_on_unknown_relation()
     {
         $model = new class extends Model
         {
@@ -563,12 +562,11 @@ class HasAutoFormTest extends TestCase
         $component = $this->getScanRulesComponent($model);
         $component->setTestRuleKeys(['unknown.field']);
 
-        $this->expectException(LivewireAutoFormException::class);
-        $this->expectExceptionMessage("Rule key 'unknown.field' could not be resolved");
-        $component->callScanInheritedRules();
+        $rules = $component->callScanInheritedRules();
+        $this->assertEquals(['unknown.field' => 'nullable'], $rules);
     }
 
-    public function test_scan_inherited_rules_throws_on_unknown_relation_field()
+    public function test_scan_inherited_rules_defaults_on_unknown_relation_field()
     {
         $model = new class extends Model
         {
@@ -581,9 +579,8 @@ class HasAutoFormTest extends TestCase
         $component = $this->getScanRulesComponent($model);
         $component->setTestRuleKeys(['relation.unknown']);
 
-        $this->expectException(LivewireAutoFormException::class);
-        $this->expectExceptionMessage("Rule key 'relation.unknown' could not be resolved");
-        $component->callScanInheritedRules();
+        $rules = $component->callScanInheritedRules();
+        $this->assertEquals(['relation.unknown' => 'nullable'], $rules);
     }
 
     public function test_scan_inherited_rules_returns_provided_rules_if_no_active_model()

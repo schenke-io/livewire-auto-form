@@ -526,7 +526,7 @@ trait HasAutoForm
                 }
             }
 
-            throw LivewireAutoFormException::ruleKeyNotFound($key, get_class($rootModel), static::class);
+            $rules[$key] = 'nullable';
         }
 
         return $rules;

@@ -8,9 +8,16 @@ use Illuminate\Support\Str;
 use SchenkeIo\LivewireAutoForm\Helpers\DataProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 
+/**
+ * Class BelongsToManyStrategy
+ *
+ * Handles persistence for BelongsToMany relationships, including pivot data.
+ */
 class BelongsToManyStrategy implements PersistenceStrategy
 {
     /**
+     * Attach or update a related model and its pivot data.
+     *
      * @param  BelongsToMany<Model, Model>  $relation
      * @param  array<string, mixed>  $data
      */
@@ -48,6 +55,8 @@ class BelongsToManyStrategy implements PersistenceStrategy
     }
 
     /**
+     * Handle auto-save for pivot fields.
+     *
      * @param  BelongsToMany<Model, Model>  $relation
      * @param  array<string, mixed>  $rules
      */
@@ -66,6 +75,8 @@ class BelongsToManyStrategy implements PersistenceStrategy
     }
 
     /**
+     * Detach the related model from the pivot table.
+     *
      * @param  BelongsToMany<Model, Model>  $relation
      */
     public function delete(mixed $relation, Model $root, string $context, int|string|null $id): void

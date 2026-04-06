@@ -9,10 +9,18 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
+/**
+ * Class StrategyFactory
+ *
+ * Resolves the appropriate PersistenceStrategy based on the type of Eloquent relationship.
+ */
 class StrategyFactory
 {
     /**
-     * Resolves the persistence strategy for the given Eloquent relationship.
+     * Resolve the persistence strategy for the given Eloquent relationship.
+     *
+     * @param  mixed  $relation  The Eloquent relationship instance.
+     * @return PersistenceStrategy|null The matched strategy or null if not supported.
      */
     public static function make(mixed $relation): ?PersistenceStrategy
     {

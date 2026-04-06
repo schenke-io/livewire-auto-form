@@ -8,10 +8,18 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
 use SchenkeIo\LivewireAutoForm\Helpers\DataProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 
+/**
+ * Class HasOneStrategy
+ *
+ * Handles persistence for HasOne and MorphOne relationships.
+ */
 class HasOneStrategy implements PersistenceStrategy
 {
     /**
+     * Create or update the related model.
+     *
      * @param  HasOne<Model, Model>|MorphOne<Model, Model>  $relation
+     * @param  array<string, mixed>  $data
      */
     public function save(mixed $relation, Model $root, string $context, int|string|null $id, array $data, FormCollection $state): void
     {
@@ -26,6 +34,8 @@ class HasOneStrategy implements PersistenceStrategy
     }
 
     /**
+     * Auto-save is not directly supported for HasOne via this strategy.
+     *
      * @param  HasOne<Model, Model>|MorphOne<Model, Model>  $relation
      * @param  array<string, mixed>  $rules
      */
@@ -35,6 +45,8 @@ class HasOneStrategy implements PersistenceStrategy
     }
 
     /**
+     * Delete the related model from the database.
+     *
      * @param  HasOne<Model, Model>|MorphOne<Model, Model>  $relation
      */
     public function delete(mixed $relation, Model $root, string $context, int|string|null $id): void
