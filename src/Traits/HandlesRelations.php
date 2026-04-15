@@ -10,6 +10,7 @@ use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
  * Handles relationship management logic for the form.
  *
  * @method void cancel()
+ * @method void returnToRootContext()
  * @method void clearRuleCache()
  * @method mixed getComponent()
  * @method void guardDirtyBuffer()
@@ -96,7 +97,7 @@ trait HandlesRelations
         $this->getCrudProcessor()->delete($relation, $id);
 
         if ($this->form->getActiveContext() === $relation && $this->form->getActiveId() == $id) {
-            $relation === '' ? $this->add('') : $this->cancel();
+            $relation === '' ? $this->add('') : $this->returnToRootContext();
         }
 
         $this->getComponent()->dispatch('saved', context: $relation, id: $id);

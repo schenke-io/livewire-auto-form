@@ -35,7 +35,7 @@ class HandlesFormStateTest extends TestCase
         {
             use HandlesFormState;
         };
-        $obj->initializeHasAutoForm();
+        $obj->bootHandlesFormState();
         $this->assertInstanceOf(FormCollection::class, $obj->form);
     }
 

@@ -61,20 +61,6 @@ trait HandlesFormState
         }
     }
 
-    /**
-     * Initializes the internal form buffer manually if needed.
-     */
-    public function initializeHasAutoForm(): void
-    {
-        $this->bootHandlesFormState();
-    }
-
-    /**
-     * ArrayAccess: Checks if a property exists in the buffer or state.
-     *
-     * This allows the component to use `isset($form['field'])` to check for
-     * the existence of form or internal state properties.
-     */
     public function offsetExists(mixed $offset): bool
     {
         $offset = (string) $offset;

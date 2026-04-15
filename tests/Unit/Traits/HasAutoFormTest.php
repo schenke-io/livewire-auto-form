@@ -4,7 +4,6 @@ namespace Tests\Unit\Traits;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
-use SchenkeIo\LivewireAutoForm\Data\PathInfo;
 use SchenkeIo\LivewireAutoForm\Helpers\CrudProcessor;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
@@ -37,6 +36,11 @@ class HasAutoFormTest extends TestCase
             public function resetErrorBag($key = null): void {}
 
             public function loadContext($context, $id, $applyState = true, $model = null): void {}
+
+            public function callResolveModelInstance(string $context, int|string|null $id): ?Model
+            {
+                return $this->resolveModelInstance($context, $id);
+            }
         };
     }
 
@@ -420,7 +424,7 @@ class HasAutoFormTest extends TestCase
     public function test_resolve_model_instance()
     {
         $this->testClass->form->rootModelClass = City::class;
-        $result = $this->testClass->resolveModelInstance('', null);
+        $result = $this->testClass->callResolveModelInstance('', null);
         $this->assertNotNull($result);
         $this->assertInstanceOf(City::class, $result);
     }
@@ -849,54 +853,6 @@ class HasAutoFormTest extends TestCase
         $this->assertEquals(['a' => 'b'], $component->rules());
         $this->assertEquals(['a' => 'b'], $component->rules());
         $this->assertEquals(1, $component->scanned);
-    }
-
-    public function test_boot_has_auto_form_handles_throwable()
-    {
-        $component = new class implements \ArrayAccess
-        {
-            use HasAutoForm;
-
-            public function __construct()
-            {
-                $this->form = new FormCollection;
-                $this->form->rootModelClass = 'SomeClass';
-            }
-
-            public function getModel(): ?Model
-            {
-                return new class extends Model
-                {
-                    public function isRelation($name): bool
-                    {
-                        return true;
-                    }
-
-                    public function rules(): array
-                    {
-                        return ['field' => 'string'];
-                    }
-                };
-            }
-
-            public function ruleKeys(): array
-            {
-                return ['field'];
-            }
-
-            public function getPathResolver(): PathResolver
-            {
-                return new class extends PathResolver
-                {
-                    public function resolve(Model $model, string $path): PathInfo
-                    {
-                        throw new \Exception('Test Exception');
-                    }
-                };
-            }
-        };
-        $component->bootHasAutoForm();
-        $this->assertTrue(true); // Should not throw
     }
 
     public function test_sync_from_draft_state_with_key()

@@ -2,37 +2,20 @@
 
 namespace SchenkeIo\LivewireAutoForm;
 
-use SchenkeIo\LivewireAutoForm\Helpers\BaseAutoForm;
+use Livewire\Component;
 use SchenkeIo\LivewireAutoForm\Helpers\FormCollection;
 use SchenkeIo\LivewireAutoForm\Helpers\LivewireAutoFormException;
+use SchenkeIo\LivewireAutoForm\Traits\HasAutoForm;
 
-/**
- * USAGE GUIDE:
- * 1. EXTEND: Create a class extending AutoWizardForm.
- * 2. STEPS: Define 'public array $structure = ["step-one" => ["field1", "field2"], "step-two" => ["field3"]];' with your Blade view names and their fields.
- * 3. PREFIX: Define 'public string $stepViewPrefix = "livewire.user-wizard-steps.";' for finding the views.
- * 4. BLADE: In your component, loop through '$this->getSteps()' and include them.
- * 5. PARAMETERS: Each step receives '$isActive' (boolean) to toggle between edit/preview modes.
- * 6. NAVIGATION: Wrap steps in a <form wire:submit="submit"> and use <button type="submit">.
- */
 /**
  * AutoWizardForm extends the base form logic to support multi-step workflows.
  *
- * It manages a sequence of form "steps", where each step is typically a
- * dedicated Blade view. The class handles:
- * - Sequential navigation between steps (next/previous).
- * - Per-step validation, ensuring only the fields assigned to the current
- *   step are validated before progression.
- * - Final persistence of all gathered form upon completion of the last step.
- *
- * Role in Architecture:
- * This allows for complex form entry processes to be broken down into
- * smaller, more manageable units while maintaining a single, unified
- * form buffer and persistence logic. It leverages the core `HasAutoForm`
- * engine for state management and CRUD operations.
+ * @implements \ArrayAccess<string, mixed>
  */
-abstract class AutoWizardForm extends BaseAutoForm
+abstract class AutoWizardForm extends Component implements \ArrayAccess
 {
+    use HasAutoForm;
+
     /**
      * @throws LivewireAutoFormException
      */

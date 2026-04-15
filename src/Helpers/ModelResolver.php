@@ -27,13 +27,17 @@ class ModelResolver
     /**
      * Resolves the model instance based on the context and ID.
      *
-     * @param  FormCollection  $state  The $form buffer.
-     * @param  string  $context  The context (empty for root, or relation name).
-     * @param  int|string|null  $id  The ID of the record.
-     * @param  bool  $applyState  Whether to apply the current form state to the model.
-     * @param  Model|null  $model  Optional model instance to use instead of fetching from DB.
+     * This method re-hydrates the root model or a related model based on the
+     * provided context (dotted relationship path) and the current form state.
      *
-     * @throws LivewireAutoFormException
+     * @param  FormCollection  $state  The $form buffer containing current form and metadata.
+     * @param  string  $context  The context (empty string for root, or relation name like 'city').
+     * @param  int|string|null  $id  The ID of the record to resolve.
+     * @param  bool  $applyState  Whether to apply the current buffered form state to the model instance.
+     * @param  Model|null  $model  Optional model instance to use instead of fetching from the database.
+     * @return Model|null The resolved Eloquent model instance, or null if it cannot be found.
+     *
+     * @throws LivewireAutoFormException If the root model class is not defined in the state.
      */
     public function resolve(FormCollection $state, string $context, int|string|null $id, bool $applyState = true, ?Model $model = null): ?Model
     {

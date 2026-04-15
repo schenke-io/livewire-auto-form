@@ -78,20 +78,17 @@ trait HasAutoForm
      */
     public function setModel(?Model $model): void
     {
-        $this->initializeHasAutoForm();
         $this->clearRuleCache();
 
         if ($model === null) {
             throw LivewireAutoFormException::rootModelRequired(static::class);
         }
 
-        // first set root model
         $this->form->autoSave = $this->autoSave;
         $class = $model::class;
         $id = $model->exists ? $model->getKey() : null;
         $this->form->setRootModel($class, $id);
 
-        // then call rules
         foreach (array_keys($this->rules()) as $key) {
             if ($key === FormCollection::SYSTEM_KEY) {
                 throw LivewireAutoFormException::forbiddenKey($key, static::class);
@@ -220,8 +217,18 @@ trait HasAutoForm
         );
 
         if ($this->form->getActiveContext() !== '') {
-            $this->cancel();
+            $this->returnToRootContext();
         }
+    }
+
+    /**
+     * Resets the form buffer to the root context.
+     *
+     * @throws LivewireAutoFormException
+     */
+    protected function returnToRootContext(): void
+    {
+        $this->loadContext('', $this->form->getRootModelId(), false);
     }
 
     /**
@@ -230,11 +237,14 @@ trait HasAutoForm
      * Discards any unsaved changes in the current context and switches
      * back to the main model editing view.
      *
+     * Note: This method is intended to be called by the developer or
+     * from a view (e.g. via wire:click="cancel").
+     *
      * @throws LivewireAutoFormException
      */
     public function cancel(): void
     {
-        $this->loadContext('', $this->form->getRootModelId(), false);
+        $this->returnToRootContext();
     }
 
     /**
@@ -263,31 +273,6 @@ trait HasAutoForm
     {
         $this->cachedRules = [];
         PathResolver::clearCache();
-    }
-
-    // =========================================================================
-    // Lifecycle Hooks
-    // =========================================================================
-
-    /**
-     * Initializes the PathResolver and pre-resolves path mappings.
-     *
-     * @throws LivewireAutoFormException
-     */
-    public function bootHasAutoForm(): void
-    {
-        if (isset($this->form) && $this->form->getRootModelClass()) {
-            try {
-                $model = $this->getModel();
-                if ($model) {
-                    foreach (array_keys($this->rules()) as $path) {
-                        $this->getPathResolver()->resolve($model, (string) $path);
-                    }
-                }
-            } catch (\Throwable) {
-                // Ignore if model can't be resolved during boot
-            }
-        }
     }
 
     /**
@@ -425,7 +410,7 @@ trait HasAutoForm
      *
      * @throws LivewireAutoFormException
      */
-    public function resolveModelInstance(string $context, int|string|null $id): ?Model
+    protected function resolveModelInstance(string $context, int|string|null $id): ?Model
     {
         return $this->getModelResolver()->resolve($this->form, $context, $id);
     }

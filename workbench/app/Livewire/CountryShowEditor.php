@@ -30,10 +30,7 @@ class CountryShowEditor extends Component
     use EditorHelper;
     use HasAutoForm;
 
-    public function boot(): void
-    {
-        $this->initializeHasAutoForm();
-    }
+    public function boot(): void {}
 
     /**
      * @return array<string, mixed>

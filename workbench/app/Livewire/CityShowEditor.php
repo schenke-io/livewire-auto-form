@@ -29,10 +29,7 @@ class CityShowEditor extends Component
 
     public City $city;
 
-    public function boot(): void
-    {
-        $this->initializeHasAutoForm();
-    }
+    public function boot(): void {}
 
     /**
      * @return array<string, mixed>
