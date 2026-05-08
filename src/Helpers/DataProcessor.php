@@ -5,7 +5,6 @@ namespace SchenkeIo\LivewireAutoForm\Helpers;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
-use Livewire\Wireable;
 use Stringable;
 
 /**
@@ -131,8 +130,11 @@ class DataProcessor
     public function sanitizeValue(string $key, mixed $value, array $nullables, ?Model $model = null): mixed
     {
         // Flatten Wireables if they were passed manually
-        if ($value instanceof Wireable && ! is_array($v = $value->toLivewire())) {
-            $value = $v;
+        if (is_object($value) && method_exists($value, 'toLivewire')) {
+            $v = $value->toLivewire();
+            if (! is_array($v)) {
+                $value = $v;
+            }
         }
 
         if ($value instanceof \BackedEnum) {
@@ -141,6 +143,11 @@ class DataProcessor
             $value = $value->name;
         } elseif ($value instanceof Stringable) {
             $value = (string) $value;
+        }
+
+        // Normalize localized numeric strings (comma to dot)
+        if (is_string($value) && ! is_numeric($value) && preg_match('/^-?\d+,\d+$/', $value)) {
+            $value = (float) str_replace(',', '.', $value);
         }
 
         if ($model && is_string($value) && is_numeric($value)) {

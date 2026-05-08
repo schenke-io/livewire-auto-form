@@ -412,4 +412,19 @@ class DataProcessorTest extends TestCase
         // Nested key should be correctly handled by stripping prefix
         $this->assertSame(1, $processor->sanitizeValue('profile.status', '1', [], $model));
     }
+
+    public function test_sanitize_value_normalizes_localized_numeric_strings()
+    {
+        $processor = new DataProcessor;
+
+        // Positive cases
+        $this->assertSame(12.34, $processor->sanitizeValue('key', '12,34', []));
+        $this->assertSame(-12.34, $processor->sanitizeValue('key', '-12,34', []));
+
+        // Negative cases (should not be touched by the specific comma-to-dot logic)
+        $this->assertSame('12.34', $processor->sanitizeValue('key', '12.34', []));
+        $this->assertSame('12,34,56', $processor->sanitizeValue('key', '12,34,56', []));
+        $this->assertSame('abc,def', $processor->sanitizeValue('key', 'abc,def', []));
+        $this->assertSame('12,34', $processor->sanitizeValue('key', ' 12,34 ', []));
+    }
 }
