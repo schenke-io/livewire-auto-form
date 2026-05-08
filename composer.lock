@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f26cc4ffe0ce2b5c9ceb4dc95eeb7e52",
+    "content-hash": "8402a77d90ba7ec7eded1dedee4d908f",
     "packages": [
         {
             "name": "archtechx/enums",
@@ -12007,20 +12007,20 @@
         },
         {
             "name": "schenke-io/laravel-relation-manager",
-            "version": "v2.0.5",
+            "version": "v2.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/schenke-io/laravel-relation-manager.git",
-                "reference": "396eb300096ec5234aec35ce8fc8e532449552ef"
+                "reference": "72d27eef2cc53dae8f329ab07856ef6ce503e557"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/schenke-io/laravel-relation-manager/zipball/396eb300096ec5234aec35ce8fc8e532449552ef",
-                "reference": "396eb300096ec5234aec35ce8fc8e532449552ef",
+                "url": "https://api.github.com/repos/schenke-io/laravel-relation-manager/zipball/72d27eef2cc53dae8f329ab07856ef6ce503e557",
+                "reference": "72d27eef2cc53dae8f329ab07856ef6ce503e557",
                 "shasum": ""
             },
             "require": {
-                "illuminate/contracts": "^12.0",
+                "illuminate/contracts": "^12.0 || ^13.0",
                 "php": "^8.3",
                 "spatie/laravel-data": "^4.18",
                 "spatie/laravel-package-tools": "^1.90"
@@ -12029,8 +12029,8 @@
                 "larastan/larastan": "^3.0",
                 "laravel/pint": "^1.21",
                 "mockery/mockery": "^1.4.4",
-                "nunomaduro/collision": "^8.5",
-                "orchestra/testbench": "^10.5",
+                "nunomaduro/collision": "^8.5 || ^9.0",
+                "orchestra/testbench": "^10.5 || ^11.0",
                 "pestphp/pest": "^3.7",
                 "schenke-io/packaging-tools": "^v0.2",
                 "spatie/laravel-ray": "^1.26"
@@ -12073,9 +12073,9 @@
             ],
             "support": {
                 "issues": "https://github.com/schenke-io/laravel-relation-manager/issues",
-                "source": "https://github.com/schenke-io/laravel-relation-manager/tree/v2.0.5"
+                "source": "https://github.com/schenke-io/laravel-relation-manager/tree/v2.1.0"
             },
-            "time": "2026-04-15T18:26:58+00:00"
+            "time": "2026-05-08T09:48:06+00:00"
         },
         {
             "name": "schenke-io/packaging-tools",
@@ -13976,9 +13976,9 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "stability-flags": [],
-    "prefer-stable": false,
+    "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.3"
