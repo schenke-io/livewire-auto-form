@@ -38,26 +38,11 @@ class DataProcessor
     {
         $allowedFields = $this->getAllowedFields($rules, $context, $model);
         $filteredData = [];
+        $nullables = $this->findNullables($rules);
 
         foreach ($allowedFields as $field) {
             $value = data_get($model, $field);
-
-            // Automatic flattening aligned with sanitizeValue():
-            // - Flatten Wireables only if they do not return arrays
-            // - Convert Stringable and Enums
-            if ($value instanceof Wireable) {
-                $toLivewire = $value->toLivewire();
-                if (! is_array($toLivewire)) {
-                    $value = $toLivewire;
-                }
-            } elseif ($value instanceof Stringable) {
-                $value = $value->__toString();
-            } elseif ($value instanceof \BackedEnum) {
-                $value = $value->value;
-            } elseif ($value instanceof \UnitEnum) {
-                $value = $value->name;
-            }
-
+            $value = $this->sanitizeValue($field, $value, $nullables, $model);
             data_set($filteredData, $field, $value);
         }
 
@@ -148,10 +133,14 @@ class DataProcessor
         // Flatten Wireables if they were passed manually
         if ($value instanceof Wireable && ! is_array($v = $value->toLivewire())) {
             $value = $v;
-        } elseif ($value instanceof \BackedEnum) {
+        }
+
+        if ($value instanceof \BackedEnum) {
             $value = $value->value;
         } elseif ($value instanceof \UnitEnum) {
             $value = $value->name;
+        } elseif ($value instanceof Stringable) {
+            $value = (string) $value;
         }
 
         if ($model && is_string($value) && is_numeric($value)) {
