@@ -24,6 +24,13 @@ use Illuminate\Support\Str;
  */
 class ModelResolver
 {
+    protected DataProcessor $processor;
+
+    public function __construct(?DataProcessor $processor = null)
+    {
+        $this->processor = $processor ?? new DataProcessor;
+    }
+
     /**
      * Resolves the model instance based on the context and ID.
      *
@@ -71,6 +78,7 @@ class ModelResolver
             $rootData = Arr::where($state->all(), fn ($v) => ! is_array($v));
             foreach ($rootData as $k => $v) {
                 $k = (string) $k;
+                $v = $this->processor->sanitizeValue($k, $v, $state->getNullables(), $root);
                 if ($root->isFillable($k) && $root->getAttribute($k) !== $v) {
                     $root->setAttribute($k, $v);
                 }
@@ -109,6 +117,7 @@ class ModelResolver
                     $dataToFill = Arr::where($contextData, fn ($v) => ! is_array($v));
                     foreach ($dataToFill as $k => $v) {
                         $k = (string) $k;
+                        $v = $this->processor->sanitizeValue("$context.$k", $v, $state->getNullables(), $result);
                         if ($result->isFillable($k) && $result->getAttribute($k) !== $v) {
                             $result->setAttribute($k, $v);
                         }

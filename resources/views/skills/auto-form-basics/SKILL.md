@@ -11,9 +11,9 @@ Use this skill when you need to create or edit a single Eloquent model record wi
 ## Core concepts
 
 - **`AutoForm`**: Base Livewire component to extend. Internally manages a `FormCollection` buffer (`$this->form`) that mirrors the model's attributes.
-- **`ruleKeys()`**: Determines which fields are loaded into the buffer and validated by picking them from the model's `rules()`.
+- **`ruleKeys()`**: Defines the list of field keys (including dotted relation paths) that this form handles. These keys are used to automatically scan and inherit rules from the model.
 - **`setModel(Model $model)`**: Initialises the buffer from a model instance. Must be called in `mount()`.
-- **`rules()`**: Returns the full set of active rules, including those scanned from models based on `ruleKeys()`.
+- **`rules()`**: Returns the full set of active rules. By default, it automatically calls `scanInheritedRules()` to pull rules from the model based on your `ruleKeys()`. Override this to add component-specific rules.
 - **`save()`**: Validates and persists the buffer. Bind with `wire:submit="save"`.
 - **`form` property**: The Livewire-tracked form buffer. Bind inputs to `wire:model="form.field"`. Validation errors are automatically prefixed as `form.field`.
 
@@ -87,12 +87,12 @@ class UserForm extends AutoForm
 ```
 
 ### Overriding rules
-You can still define `rules()` in the component to provide additional rules or override those from the model:
+You can still define `rules()` in the component to provide additional rules or override those from the model. Use `scanInheritedRules()` to merge component-specific rules with those from your models:
 
 ```php
 public function rules(): array
 {
-    return array_merge(parent::rules(), [
+    return $this->scanInheritedRules([
         'email' => 'required|email|unique:users,email,' . $this->form->rootModelId,
     ]);
 }

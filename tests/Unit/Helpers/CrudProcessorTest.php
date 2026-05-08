@@ -81,6 +81,9 @@ it('save() calls saveRootModel and optionally saveRelatedModel', function () {
 });
 
 it('updatedForm() returns saved=false when Auto-Save is off', function () {
+    $this->state->shouldReceive('getActiveContext')->andReturn('');
+    $this->state->shouldReceive('getActiveId')->andReturn(null);
+    $this->resolver->shouldReceive('resolve')->andReturn(null);
     $this->processor->shouldReceive('sanitizeValue')->andReturn('clean');
     $this->processor->shouldReceive('translatePath')->andReturnArg(0);
     $this->state->shouldReceive('getNullables')->andReturn([]);

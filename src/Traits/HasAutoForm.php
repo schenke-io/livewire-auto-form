@@ -240,6 +240,10 @@ trait HasAutoForm
      * Note: This method is intended to be called by the developer or
      * from a view (e.g. via wire:click="cancel").
      *
+     * Override this method if you need to perform additional actions
+     * or redirects when the user cancels the form (e.g., returning
+     * to an index page).
+     *
      * @throws LivewireAutoFormException
      */
     public function cancel(): void
@@ -248,10 +252,10 @@ trait HasAutoForm
     }
 
     /**
-     * Synchronizes the form buffer with the latest form from the database.
+     * Synchronizes the form buffer with the latest data from the database.
      *
-     * Useful if the underlying model has been changed externally or
-     * needs to be refreshed.
+     * Reloads the model instance from the database and updates the form buffer.
+     * This is useful if the underlying model has been changed externally.
      *
      * @param  Model  $model  The model instance to reload.
      *
@@ -267,7 +271,8 @@ trait HasAutoForm
      * Clears the internal rule cache.
      *
      * Call this method if you dynamically change the form structure
-     * (e.g. by modifying $ruleKeys) to ensure rules are re-scanned.
+     * (e.g. by modifying $ruleKeys) to ensure rules are re-scanned
+     * from the models.
      */
     public function clearRuleCache(): void
     {

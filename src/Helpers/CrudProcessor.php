@@ -100,7 +100,7 @@ class CrudProcessor
             }
 
             $realKey = $this->processor->translatePath($pathInfo->targetAttribute, $this->state->getJsonColumns(), $root);
-            $rootData[$realKey] = $this->processor->sanitizeValue($key, $value, $this->state->getNullables());
+            $rootData[$realKey] = $this->processor->sanitizeValue($key, $value, $this->state->getNullables(), $root);
         }
 
         // 1. Handle BelongsTo updates from relations form
@@ -179,8 +179,10 @@ class CrudProcessor
             return;
         }
 
+        $model = $this->resolver->resolve($this->state, $context, $id);
+
         foreach ($data as $key => $value) {
-            $data[$key] = $this->processor->sanitizeValue("$context.$key", $value, $this->state->getNullables());
+            $data[$key] = $this->processor->sanitizeValue("$context.$key", $value, $this->state->getNullables(), $model);
         }
 
         $relation = $this->resolveRelation($root, $context);
@@ -206,7 +208,11 @@ class CrudProcessor
      */
     public function updatedForm(string $key, mixed $value, array $rules): array
     {
-        $cleanValue = $this->processor->sanitizeValue($key, $value, $this->state->getNullables());
+        $context = $this->state->getActiveContext();
+        $id = $this->state->getActiveId();
+        $model = $this->resolver->resolve($this->state, (string) $context, $id);
+
+        $cleanValue = $this->processor->sanitizeValue($key, $value, $this->state->getNullables(), $model);
 
         // If Auto-Save is OFF, stop here.
         if (! $this->state->isAutoSave()) {
@@ -218,16 +224,12 @@ class CrudProcessor
             return ['cleanValue' => $cleanValue, 'saved' => false];
         }
 
-        $context = $this->state->getActiveContext();
-        $id = $this->state->getActiveId();
-
         // Determine realKey (field name within context)
         $realKey = (string) $key;
         if ($context !== '' && Str::startsWith((string) $key, "$context.")) {
             $realKey = Str::after((string) $key, "$context.");
         }
 
-        $model = $this->resolver->resolve($this->state, (string) $context, $id);
         if (! $model || ! $model->exists) {
             return ['cleanValue' => $cleanValue, 'saved' => false, 'context' => (string) $context, 'id' => $id];
         }

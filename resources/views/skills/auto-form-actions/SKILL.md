@@ -149,7 +149,7 @@ class CountryEditor extends Component
     public function save(): void
     {
         $this->validate();
-        $this->getCrudProcessor()->save($this->form->all());
+        $this->traitSave();
         $this->auditLog->record('country.updated', $this->form->rootModelId);
     }
 

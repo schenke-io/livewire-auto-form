@@ -41,6 +41,18 @@ enum UnitEnumTest
     case Beta;
 }
 
+enum IntBackedEnumTest: int
+{
+    case One = 1;
+}
+
+class ModelWithIntEnumTest extends Model
+{
+    protected $casts = [
+        'status' => IntBackedEnumTest::class,
+    ];
+}
+
 class EnumModelTest extends Model
 {
     protected $guarded = [];
@@ -333,5 +345,71 @@ class DataProcessorTest extends TestCase
     {
         $processor = new DataProcessor;
         $this->assertEquals('data', $processor->translatePath('data', ['data']));
+    }
+
+    public function test_sanitize_value_casts_to_int_for_int_backed_enums()
+    {
+        $processor = new DataProcessor;
+        $model = new ModelWithIntEnumTest;
+
+        // Numeric string should be cast to int
+        $this->assertSame(1, $processor->sanitizeValue('status', '1', [], $model));
+
+        // Non-numeric string should remain string (though ReflectionEnum might catch it later if it's not a valid case)
+        $this->assertSame('abc', $processor->sanitizeValue('status', 'abc', [], $model));
+
+        // Numeric string for a key NOT in casts should remain string
+        $this->assertSame('1', $processor->sanitizeValue('other', '1', [], $model));
+
+        // No model provided - should remain string
+        $this->assertSame('1', $processor->sanitizeValue('status', '1', []));
+    }
+
+    public function test_sanitize_value_does_not_cast_to_int_for_string_backed_enums()
+    {
+        $processor = new DataProcessor;
+        $model = new class extends Model
+        {
+            protected $casts = ['type' => BackedEnumTest::class];
+        };
+
+        // 'alpha' is string-backed, so '1' should NOT be cast to int
+        $this->assertSame('1', $processor->sanitizeValue('type', '1', [], $model));
+    }
+
+    public function test_extract_filtered_data_includes_id_if_model_exists_and_id_missing()
+    {
+        $processor = new DataProcessor;
+        $model = new EnumModelTest(['id' => 123]);
+        $model->exists = true; // Simulate existing model
+
+        $rules = ['backed' => 'required'];
+        $model->backed = BackedEnumTest::Alpha;
+
+        $data = $processor->extractFilteredData($model, $rules, '');
+
+        $this->assertArrayHasKey('id', $data);
+        $this->assertEquals(123, $data['id']);
+    }
+
+    public function test_sanitize_value_does_not_cast_to_int_for_unit_enums()
+    {
+        $processor = new DataProcessor;
+        $model = new class extends Model
+        {
+            protected $casts = ['type' => UnitEnumTest::class];
+        };
+
+        // Unit enum is not backed, so should not cast
+        $this->assertSame('1', $processor->sanitizeValue('type', '1', [], $model));
+    }
+
+    public function test_sanitize_value_handles_nested_keys()
+    {
+        $processor = new DataProcessor;
+        $model = new ModelWithIntEnumTest;
+
+        // Nested key should be correctly handled by stripping prefix
+        $this->assertSame(1, $processor->sanitizeValue('profile.status', '1', [], $model));
     }
 }

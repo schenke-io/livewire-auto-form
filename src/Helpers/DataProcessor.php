@@ -140,9 +140,10 @@ class DataProcessor
      * @param  string  $key  The key of the field.
      * @param  mixed  $value  The value to sanitize.
      * @param  array<int, string>  $nullables  The list of nullable fields.
+     * @param  Model|null  $model  Optional model instance to check for casts.
      * @return mixed The sanitized value.
      */
-    public function sanitizeValue(string $key, mixed $value, array $nullables): mixed
+    public function sanitizeValue(string $key, mixed $value, array $nullables, ?Model $model = null): mixed
     {
         // Flatten Wireables if they were passed manually
         if ($value instanceof Wireable && ! is_array($v = $value->toLivewire())) {
@@ -151,6 +152,18 @@ class DataProcessor
             $value = $value->value;
         } elseif ($value instanceof \UnitEnum) {
             $value = $value->name;
+        }
+
+        if ($model && is_string($value) && is_numeric($value)) {
+            $attribute = Str::afterLast($key, '.');
+            $casts = $model->getCasts();
+            $cast = $casts[$attribute] ?? null;
+            if ($cast && enum_exists($cast)) {
+                $reflection = new \ReflectionEnum($cast);
+                if ($reflection->isBacked() && $reflection->getBackingType()->getName() === 'int') {
+                    $value = (int) $value;
+                }
+            }
         }
 
         // Handle "empty string to null" logic
