@@ -36,6 +36,7 @@
         "larastan/larastan": "^3.5",
         "pestphp/pest": "^4.2",
         "laravel/pint": "^1.24",
+        "livewire/livewire": "^4.0",
         "orchestra/testbench": "10.* || 11.*",
         "schenke-io/laravel-relation-manager": "^2.0",
         "schenke-io/packaging-tools": "^0.2",

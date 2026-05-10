@@ -7,6 +7,7 @@ use Illuminate\Foundation\Application;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 use SchenkeIo\LivewireAutoForm\LivewireAutoFormServiceProvider;
+use Spatie\LaravelData\LaravelDataServiceProvider;
 use Workbench\App\Providers\WorkbenchServiceProvider;
 
 /**
@@ -21,6 +22,7 @@ abstract class TestCase extends BaseTestCase
         return [
             LivewireServiceProvider::class,
             FluxServiceProvider::class,
+            LaravelDataServiceProvider::class,
             LivewireAutoFormServiceProvider::class,
             WorkbenchServiceProvider::class,
         ];
